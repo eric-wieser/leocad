@@ -142,7 +142,7 @@ UINT APIENTRY OFNOpenHookProc(HWND hdlg, UINT uiMsg, WPARAM wParam, LPARAM lPara
 
 				float fv;
 				char id[32];
-				File file(false);
+				FileDisk file;
 				file.Open(filename, "rb");
 				file.Read(id, 32);
 				sscanf(strchr(id, ' '), "%f", &fv);
@@ -1105,7 +1105,7 @@ bool SystemDoDialog(int nMode, void* param)
 		case LC_DLG_PICTURE_SAVE:
 		{
 			CFileDialog dlg(FALSE, NULL, NULL, OFN_HIDEREADONLY|OFN_OVERWRITEPROMPT|OFN_ENABLEHOOK|OFN_ENABLETEMPLATE|OFN_EXPLORER,
-				"GIF Files (*.gif)|*.gif|JPEG Files (*.jpg;*.jpeg)|*.jpg;*.jpeg|Bitmap Files (*.bmp)|*.bmp|AVI Files (*.avi)|*.avi|All Files (*.*)|*.*||");
+				"GIF Files (*.gif)|*.gif|JPEG Files (*.jpg;*.jpeg)|*.jpg;*.jpeg|Bitmap Files (*.bmp)|*.bmp|PNG Files (*.png)|*.png|AVI Files (*.avi)|*.avi|All Files (*.*)|*.*||");
 
 			DWORD dwImage = theApp.GetProfileInt ("Default", "Image Options", 1|LC_IMAGE_TRANSPARENT);
 			LC_IMAGEDLG_OPTS* opts = (LC_IMAGEDLG_OPTS*)param;
@@ -1137,15 +1137,17 @@ bool SystemDoDialog(int nMode, void* param)
 
 					if ((strcmp(ext, "jpg") == 0) || (strcmp(ext, "jpeg") == 0) ||
 						(strcmp(ext, "bmp") == 0) || (strcmp(ext, "gif") == 0) ||
-						(strcmp(ext, "avi") == 0))
+						(strcmp(ext, "png") == 0) || (strcmp(ext, "avi") == 0))
 						return true;
 				}
-				switch(opts->imopts.format)
+
+				switch (opts->imopts.format)
 				{
-				case 0: strcat(opts->filename, ".bmp"); break;
-				case 1: strcat(opts->filename, ".gif"); break;
-				case 2: strcat(opts->filename, ".jpg"); break;
-				case 3: strcat(opts->filename, ".avi"); break;
+				case LC_IMAGE_BMP: strcat(opts->filename, ".bmp"); break;
+				case LC_IMAGE_GIF: strcat(opts->filename, ".gif"); break;
+				case LC_IMAGE_JPG: strcat(opts->filename, ".jpg"); break;
+				case LC_IMAGE_PNG: strcat(opts->filename, ".png"); break;
+				case LC_IMAGE_AVI: strcat(opts->filename, ".avi"); break;
 				}
 
 				return true;
@@ -1590,7 +1592,7 @@ File* SystemImportClipboard()
 		HANDLE hData = ::GetClipboardData(ClipboardFormat);
 		if (hData != NULL)
 		{
-			clip = new File(true);
+			clip = new FileMem();
 
 			BYTE* lpBuffer = (BYTE*)::GlobalLock(hData);
 			long nBufferSize = ::GlobalSize(hData);

@@ -1,12 +1,11 @@
 // Information about how to draw a piece and some more stuff.
 //
 
-#ifdef _WINDOWS
+#ifdef LC_WINDOWS
 #include "stdafx.h"
-#else
+#endif
 #include <GL/gl.h>
 #include <GL/glu.h>
-#endif
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
@@ -40,80 +39,6 @@ static float costbl[SIDES];
 #define LC_KNOB_RADIUS 0.32f
 //#define LC_STUD_TECH_RADIUS (LC_FLAT_HEIGHT/2)
 
-
-/*
-static unsigned long GetDefaultPieceGroup(char* name)
-{
-	char tmp[9];
-	strncpy (tmp, name, 9);
-//	tmp[8] = 0;
-
-	if (strstr(tmp,"Baseplate")	|| strstr(tmp,"Plate")	|| 
-		strstr(tmp,"Platform")) 
-		return 0x001;
-	
-	if (strstr(tmp,"Brick")	|| strstr(tmp,"Cylin") ||
-		strstr(tmp,"Cone"))
-		return 0x002;
-	
-	if (strstr(tmp,"Tile"))
-		return 0x004;
-	
-	if (strstr(tmp,"Slope"))
-		return 0x008;
-	
-	if (strstr(tmp,"Technic")	|| strstr(tmp,"Crane")	||
-		strstr(tmp,"Wheel")		|| strstr(tmp,"Tyre")	||
-		strstr(tmp,"Electric"))
-		return 0x010;
-	
-	// space & plane
-	if (strstr(tmp,"Space")		|| strstr(tmp,"Plane")	||
-		strstr(tmp,"Windscr")	|| strstr(tmp,"~2421")	||
-		strstr(tmp,"Wing")		|| strstr(tmp,"Wedge")	||
-		strstr(tmp,"Propellor")	|| strstr(tmp,"Rotor")	||
-		strstr(tmp,"Rack")		|| strstr(tmp,"Tail"))
-		return 0x020;
-	
-	if (strstr(tmp,"Train"))
-		return 0x040;
-	
-	// other parts
-	if (strstr(tmp,"Arch")		|| strstr(tmp,"Panel")	||
-		strstr(tmp,"Car")		|| strstr(tmp,"Window")	||
-		strstr(tmp,"Freestyle")	|| strstr(tmp,"Support")||
-		strstr(tmp,"Fence")		|| strstr(tmp,"Gate")	|| 
-		strstr(tmp,"Garage")	|| strstr(tmp,"Stairs")	||
-		strstr(tmp,"Bracket")	|| strstr(tmp,"Hinge")	||
-		strstr(tmp,"Homemaker")	|| strstr(tmp,"Rock")	|| 
-		strstr(tmp,"Cupboard")	|| strstr(tmp,"Storage")||
-		strstr(tmp,"Scala")		|| strstr(tmp,"Boat")	||
-		strstr(tmp,"Trailer")	|| strstr(tmp,"Box")	|| 
-		strstr(tmp,"Turntab")	|| strstr(tmp,"Winch")	|| 
-		strstr(tmp,"Door")		|| strstr(tmp,"Magnet"))
-		return 0x080;
-	
-	// accessories
-	if (strstr(tmp,"Minifig")	|| strstr(tmp,"Antenna")||
-		strstr(tmp,"Ladder")	|| strstr(tmp,"Jack")	||
-		strstr(tmp,"Exhaust")	|| strstr(tmp,"Lever")	||
-		strstr(tmp,"Roadsign")	|| strstr(tmp,"Town")	|| 
-		strstr(tmp,"Leaves")	|| strstr(tmp,"Horse")	||
-		strstr(tmp,"Tree")		|| strstr(tmp,"Flower")	||
-		strstr(tmp,"Plant")		|| 
-		strstr(tmp,"Conveyor")	|| strstr(tmp,"Tractor")|| 
-		strstr(tmp,"Grab")		|| strstr(tmp,"Roller")	|| 
-		strstr(tmp,"Stretch")	|| strstr(tmp,"Tap ")	|| 
-		strstr(tmp,"Forklift")	|| strstr(tmp,"Flag")	|| 
-		strstr(tmp,"Belville")	|| strstr(tmp,"Light &")|| 
-		strstr(tmp,"Hose")		|| strstr(tmp,"Arm P")	|| 
-		strstr(tmp,"Brush")		|| strstr(tmp,"Castle")	||
-		strstr(tmp,"Tipper")	|| strstr(tmp,"Bar"))
-		return 0x100;
-	
-	return 1;
-}
-*/
 
 // Convert a color from LDraw to LeoCAD
 unsigned char ConvertColor(int c)
@@ -207,7 +132,6 @@ void PieceInfo::LoadIndex(File* file)
 		init = true;
 	}
 
-
 	// TODO: don't change ref. if we're reloading ?
 	m_nRef = 0;
 	m_nVertexCount = 0;
@@ -221,11 +145,11 @@ void PieceInfo::LoadIndex(File* file)
 
 	file->Read(m_strName, 8);
 	file->Read(m_strDescription, 64);
-	file->Read(sh, sizeof(sh));
-	file->Read(&m_nFlags, sizeof(m_nFlags));
-	file->Read(&m_nGroups, sizeof(m_nGroups));
-	file->Read(&m_nOffset, sizeof(m_nOffset));
-	file->Read(&m_nSize, sizeof(m_nSize));
+	file->ReadShort(sh, 6);
+	file->ReadByte(&m_nFlags, 1);
+	file->ReadLong(&m_nGroups, 1);
+	file->ReadLong(&m_nOffset, 1);
+	file->ReadLong(&m_nSize, 1);
 
 	scale = 100;
 	if (m_nFlags & LC_PIECE_MEDIUM) scale = 1000;
@@ -265,7 +189,7 @@ void PieceInfo::DeRef()
 
 void PieceInfo::LoadInformation()
 {
-	FILE* bin;
+	FileDisk bin;
 	char filename[LC_MAXPATH];
 	void* buf;
 	unsigned long verts, *longs, fixverts;
@@ -318,14 +242,13 @@ void PieceInfo::LoadInformation()
 	// Open pieces.bin and buffer the information we need.
 	strcpy(filename, project->GetLibraryPath());
 	strcat(filename, "pieces.bin");
-	bin = fopen(filename, "rb");
-	if (bin == NULL)
+	if (!bin.Open(filename, "rb"))
 		return;
 
 	buf = malloc(m_nSize);
-	fseek(bin, m_nOffset, SEEK_SET);
-	fread(buf, 1, m_nSize, bin);
-	fclose(bin);
+	bin.Seek(m_nOffset, SEEK_SET);
+	bin.Read(buf, m_nSize);
+	bin.Close();
 
 	shift  = 1.0f/(1<<14);
 	scale = 0.01f;
@@ -1491,10 +1414,10 @@ void PieceInfo::ZoomExtents()
 {
 	// TODO: Calculate this in the right way
 	bool out = false;
-	double modelMatrix[16], projMatrix[16];
-	double obj1x, obj1y, obj1z, obj2x, obj2y, obj2z;
+	GLdouble modelMatrix[16], projMatrix[16];
+	GLdouble obj1x, obj1y, obj1z, obj2x, obj2y, obj2z;
 	double View[3] = { -5, -5, 3 };
-	int	 viewport[4];
+	GLint viewport[4];
 	float v[24] = {
 		m_fDimensions[0], m_fDimensions[1], m_fDimensions[5],
 		m_fDimensions[3], m_fDimensions[1], m_fDimensions[5],
@@ -1584,7 +1507,7 @@ void PieceInfo::RenderPiece(int nColor)
 		m_pTextures[sh].texture->MakeCurrent();
 
 		if (m_pTextures[sh].color == LC_COL_DEFAULT)
-			glColor3fv(FlatColorArray[nColor]);
+			glColor3ubv(FlatColorArray[nColor]);
 		if (nColor > 13 && nColor < 22)
 		{
 //			glEnable (GL_POLYGON_STIPPLE);
@@ -1634,7 +1557,7 @@ void PieceInfo::RenderPiece(int nColor)
 					curcolor = (unsigned short)*info;
 				info++;
 
-				glColor3fv(FlatColorArray[curcolor]);
+				glColor3ubv(FlatColorArray[curcolor]);
 				if (curcolor > 13 && curcolor < 22)
 				{
 //					glEnable (GL_POLYGON_STIPPLE);
@@ -1675,7 +1598,7 @@ void PieceInfo::RenderPiece(int nColor)
 					curcolor = *info;
 				info++;
 
-				glColor3fv(FlatColorArray[curcolor]);
+				glColor3ubv(FlatColorArray[curcolor]);
 				if (curcolor > 13 && curcolor < 22)
 				{
 //					glEnable (GL_POLYGON_STIPPLE);
@@ -1746,14 +1669,14 @@ void PieceInfo::WriteWavefront(FILE* file, unsigned char color, unsigned long* s
 
 				for (count = *info, info++; count; count -= 4)
 				{
-					fprintf(file, "f %d %d %d %d\n", 
+					fprintf(file, "f %ld %ld %ld %ld\n", 
 						*info+*start, info[1]+*start, info[2]+*start, info[3]+*start);
 					info += 4;
 				}
 
 				for (count = *info, info++; count; count -= 3)
 				{
-					fprintf(file, "f %d %d %d\n", 
+					fprintf(file, "f %ld %ld %ld\n", 
 						*info+*start, info[1]+*start, info[2]+*start);
 					info += 3;
 				}
@@ -1796,14 +1719,14 @@ void PieceInfo::WriteWavefront(FILE* file, unsigned char color, unsigned long* s
 
 				for (count = *info, info++; count; count -= 4)
 				{
-					fprintf(file, "f %d %d %d %d\n", 
+					fprintf(file, "f %ld %ld %ld %ld\n", 
 						*info+*start, info[1]+*start, info[2]+*start, info[3]+*start);
 					info += 4;
 				}
 
 				for (count = *info, info++; count; count -= 3)
 				{
-					fprintf(file, "f %d %d %d\n", 
+					fprintf(file, "f %ld %ld %ld\n", 
 						*info+*start, info[1]+*start, info[2]+*start);
 					info += 3;
 				}

@@ -1,12 +1,11 @@
 // Everything that is a part of a LeoCAD project goes here.
 //
 
-#ifdef _WINDOWS
+#ifdef LC_WINDOWS
 #include "stdafx.h"
-#else
+#endif
 #include <GL/gl.h>
 #include <GL/glu.h>
-#endif
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -24,6 +23,7 @@
 #include "project.h"
 #include "image.h"
 #include "system.h"
+#include "globals.h"
 
 typedef struct
 {
@@ -32,20 +32,20 @@ typedef struct
 } VIEWPORT;
 
 static VIEWPORT viewports[14] = {
-	{ 1,  0, 0,    1,    1,     0,    0,    0,    0,     0,    0,    0,    0,     0,    0,    0,    0 }, // 1
-	{ 2,  0, 0, 0.5f,    1,  0.5f,    0, 0.5f,    1,     0,    0,    0,    0,     0,    0,    0,    0 }, // 2V
-	{ 2,  0, 0,    1, 0.5f,     0, 0.5f,    1, 0.5f,     0,    0,    0,    0,     0,    0,    0,    0 }, // 2H
-	{ 2,  0, 0,    1, 0.7f,     0, 0.7f,    1, 0.3f,     0,    0,    0,    0,     0,    0,    0,    0 }, // 2HT
-	{ 2,  0, 0,    1, 0.3f,     0, 0.3f,    1, 0.7f,     0,    0,    0,    0,     0,    0,    0,    0 }, // 2HB
-	{ 3,  0, 0, 0.5f, 0.5f,     0, 0.5f, 0.5f, 0.5f,  0.5f,    0, 0.5f,    1,     0,    0,    0,    0 }, // 3VL
-	{ 3,  0, 0, 0.5f,    1,  0.5f,    0, 0.5f, 0.5f,  0.5f, 0.5f, 0.5f, 0.5f,     0,    0,    0,    0 }, // 3VR
-	{ 3,  0, 0,    1, 0.5f,     0, 0.5f, 0.5f, 0.5f,  0.5f, 0.5f, 0.5f, 0.5f,     0,    0,    0,    0 }, // 3HB
-	{ 3,  0, 0, 0.5f, 0.5f,  0.5f,    0, 0.5f, 0.5f,     0, 0.5f,    1, 0.5f,     0,    0,    0,    0 }, // 3HT
-	{ 4,  0, 0, 0.3f, 0.3f,     0, 0.3f, 0.3f, 0.4f,     0, 0.7f, 0.3f, 0.3f,  0.3f,    0, 0.7f,    1 }, // 4VL
-	{ 4,  0, 0, 0.7f,    1,  0.7f,    0, 0.3f, 0.3f,  0.7f, 0.3f, 0.3f, 0.4f,  0.7f, 0.7f, 0.3f, 0.3f }, // 4VR
-	{ 4,  0, 0,    1, 0.7f,     0, 0.7f, 0.3f, 0.3f,  0.3f, 0.7f, 0.4f, 0.3f,  0.7f, 0.7f, 0.3f, 0.3f }, // 4HT
-	{ 4,  0, 0, 0.3f, 0.3f,  0.3f,    0, 0.4f, 0.3f,  0.7f,    0, 0.3f, 0.3f,     0, 0.3f,    1, 0.7f }, // 4HB
-	{ 4,  0, 0, 0.5f, 0.5f,  0.5f,    0, 0.5f, 0.5f,     0, 0.5f, 0.5f, 0.5f,  0.5f, 0.5f, 0.5f, 0.5f }};// 4
+  { 1,  {{0, 0,    1,    1}, {    0,    0,    0,    0}, {    0,    0,    0,    0}, {    0,    0,    0,    0} }}, // 1
+  { 2,  {{0, 0, 0.5f,    1}, { 0.5f,    0, 0.5f,    1}, {    0,    0,    0,    0}, {    0,    0,    0,    0} }}, // 2V
+  { 2,  {{0, 0,    1, 0.5f}, {    0, 0.5f,    1, 0.5f}, {    0,    0,    0,    0}, {    0,    0,    0,    0} }}, // 2H
+  { 2,  {{0, 0,    1, 0.7f}, {    0, 0.7f,    1, 0.3f}, {    0,    0,    0,    0}, {    0,    0,    0,    0} }}, // 2HT
+  { 2,  {{0, 0,    1, 0.3f}, {    0, 0.3f,    1, 0.7f}, {    0,    0,    0,    0}, {    0,    0,    0,    0} }}, // 2HB
+  { 3,  {{0, 0, 0.5f, 0.5f}, {    0, 0.5f, 0.5f, 0.5f}, { 0.5f,    0, 0.5f,    1}, {    0,    0,    0,    0} }}, // 3VL
+  { 3,  {{0, 0, 0.5f,    1}, { 0.5f,    0, 0.5f, 0.5f}, { 0.5f, 0.5f, 0.5f, 0.5f}, {    0,    0,    0,    0} }}, // 3VR
+  { 3,  {{0, 0,    1, 0.5f}, {    0, 0.5f, 0.5f, 0.5f}, { 0.5f, 0.5f, 0.5f, 0.5f}, {    0,    0,    0,    0} }}, // 3HB
+  { 3,  {{0, 0, 0.5f, 0.5f}, { 0.5f,    0, 0.5f, 0.5f}, {    0, 0.5f,    1, 0.5f}, {    0,    0,    0,    0} }}, // 3HT
+  { 4,  {{0, 0, 0.3f, 0.3f}, {    0, 0.3f, 0.3f, 0.4f}, {    0, 0.7f, 0.3f, 0.3f}, { 0.3f,    0, 0.7f,    1} }}, // 4VL
+  { 4,  {{0, 0, 0.7f,    1}, { 0.7f,    0, 0.3f, 0.3f}, { 0.7f, 0.3f, 0.3f, 0.4f}, { 0.7f, 0.7f, 0.3f, 0.3f} }}, // 4VR
+  { 4,  {{0, 0,    1, 0.7f}, {    0, 0.7f, 0.3f, 0.3f}, { 0.3f, 0.7f, 0.4f, 0.3f}, { 0.7f, 0.7f, 0.3f, 0.3f} }}, // 4HT
+  { 4,  {{0, 0, 0.3f, 0.3f}, { 0.3f,    0, 0.4f, 0.3f}, { 0.7f,    0, 0.3f, 0.3f}, {    0, 0.3f,    1, 0.7f} }}, // 4HB
+  { 4,  {{0, 0, 0.5f, 0.5f}, { 0.5f,    0, 0.5f, 0.5f}, {    0, 0.5f, 0.5f, 0.5f}, { 0.5f, 0.5f, 0.5f, 0.5f} }}};// 4
 
 typedef struct 
 {
@@ -260,7 +260,11 @@ bool Project::Initialize(int argc, char *argv[], char* libpath)
 
 	if (LoadPieceLibrary() == false)
 	{
+#ifdef LC_WINDOWS
 		SystemDoMessageBox("Cannot load piece library.", LC_MB_OK|LC_MB_ICONERROR);
+#else
+		printf("Cannot load piece library !\n");
+#endif
 		return false;
 	}
 
@@ -291,16 +295,18 @@ bool Project::Initialize(int argc, char *argv[], char* libpath)
 				strlwr(ext);
 
 				if ((strcmp(ext, "bmp") != 0) && (strcmp(ext, "gif") != 0) && 
-					(strcmp(ext, "jpg") != 0) && (strcmp(ext, "jpeg") != 0))
+					(strcmp(ext, "jpg") != 0) && (strcmp(ext, "jpeg") != 0) &&
+					(strcmp(ext, "png") != 0))
 				need_ext = true;
 			}
 
 			if (need_ext)
 				switch (imopts.format)
 				{
-				case 0: strcat(picture, ".bmp"); break;
-				case 1: strcat(picture, ".gif"); break;
-				case 2: strcat(picture, ".jpg"); break;
+				case LC_IMAGE_BMP: strcat(picture, ".bmp"); break;
+				case LC_IMAGE_GIF: strcat(picture, ".gif"); break;
+				case LC_IMAGE_JPG: strcat(picture, ".jpg"); break;
+				case LC_IMAGE_PNG: strcat(picture, ".png"); break;
 				}
 
 			imopts.background[0] = (unsigned char)(m_fBackground[0]*255);
@@ -324,7 +330,7 @@ bool Project::Initialize(int argc, char *argv[], char* libpath)
 // Load the piece library
 bool Project::LoadPieceLibrary()
 {
-	File idx(false);
+	FileDisk idx;
 	char filename[LC_MAXPATH];
 	unsigned char version;
 	unsigned short count, movedcount;
@@ -332,6 +338,11 @@ bool Project::LoadPieceLibrary()
 	PieceInfo* pElements;
 	Texture* pTexture;
 	int i;
+
+	// Make sure that the path ends with a '/'
+	i = strlen(m_LibraryPath)-1;
+	if ((m_LibraryPath[i] != '\\') && (m_LibraryPath[i] != '/'))
+	  strcat(m_LibraryPath, "/");
 
 	// Read the piece library index.
 	strcpy(filename, m_LibraryPath);
@@ -641,7 +652,7 @@ bool Project::FileLoad(File* file, bool bUndo, bool bMerge)
 	char id[32];
 	unsigned long rgb;
 	float fv = 0.4f;
-	unsigned char ch, action;
+	unsigned char ch, action = m_nCurAction;
 	unsigned short sh;
 
 	file->Seek(0, SEEK_SET);
@@ -1272,7 +1283,7 @@ void Project::FileReadLDraw(File* file, Matrix* prevmat, int* nOk, int DefColor,
 
 			if (read)
 			{
-				File tf(false);
+				FileDisk tf;
 				if (tf.Open(pn, "rt"))
 					FileReadLDraw(&tf, &tmpmat, nOk, cl, nStep);
 			}
@@ -1306,7 +1317,7 @@ bool Project::DoFileSave()
 // if 'bReplace' is FALSE will not change path name (SaveCopyAs)
 bool Project::DoSave(char* lpszPathName, bool bReplace)
 {
-	File file(false);
+	FileDisk file;
 	char newName[LC_MAXPATH];
 	memset(newName, 0, sizeof(newName));
 	if (lpszPathName)
@@ -1507,7 +1518,7 @@ bool Project::OnNewDocument()
 
 bool Project::OnOpenDocument(char* lpszPathName)
 {
-	File file(false);
+	FileDisk file;
 	bool bSuccess = false;
 
 	if (!file.Open(lpszPathName, "rb"))
@@ -1664,7 +1675,7 @@ void Project::Render(bool bToMemory)
 //		return;
 
 #ifdef _DEBUG
-#ifdef _WINDOWS
+#ifdef LC_WINDOWS
 #define BENCHMARK
 #endif
 #endif
@@ -1919,8 +1930,8 @@ glLightfv(GL_LIGHT0, GL_SPECULAR, one);
 			// There's got to be an easier way...
 			if (m_nSnap & LC_DRAW_AXIS)
 			{
-				double model[16], proj[16], obj1x, obj1y, obj1z, obj2x, obj2y, obj2z;
-				int	viewport[4];
+				GLdouble model[16], proj[16], obj1x, obj1y, obj1z, obj2x, obj2y, obj2z;
+				GLint viewport[4];
 				
 				glGetDoublev(GL_MODELVIEW_MATRIX, model);
 				glGetDoublev(GL_PROJECTION_MATRIX, proj);
@@ -2627,7 +2638,7 @@ bool Project::RemoveSelectedObjects()
 	}
 
 	// Cameras can't be removed while being used or default
-	for (pCamera = m_pCameras; pCamera; pPrev = pCamera, pCamera = pCamera->m_pNext)
+	for (pPrev = NULL, pCamera = m_pCameras; pCamera; pPrev = pCamera, pCamera = pCamera->m_pNext)
 	{
 		if (pCamera->IsSelected() && pCamera->IsUser())
 		{
@@ -2641,7 +2652,10 @@ bool Project::RemoveSelectedObjects()
 
 			if (bCanDelete)
 			{
-				((Camera*)pPrev)->m_pNext = pCamera->m_pNext;
+			  if (pPrev)
+			    ((Camera*)pPrev)->m_pNext = pCamera->m_pNext;
+			  else
+			    m_pCameras = pCamera->m_pNext;
 				delete pCamera;
 				pCamera = (Camera*)pPrev;
 				removed = true;
@@ -2740,7 +2754,8 @@ void Project::CheckAutoSave()
 	m_nSaveTimer += 5;
 	if (m_nAutosave & LC_AUTOSAVE_FLAG)
 	{
-		int nInterval = m_nAutosave & ~LC_AUTOSAVE_FLAG;
+		int nInterval;
+		nInterval = m_nAutosave & ~LC_AUTOSAVE_FLAG;
 
 		if (m_nSaveTimer >= (m_nAutosave*60))
 		{
@@ -3073,7 +3088,7 @@ void Project::HandleCommand(LC_COMMANDS id, unsigned long nParam)
 
 			if (SystemDoDialog(LC_DLG_FILE_MERGE, filename))
 			{
-				File file(false);
+				FileDisk file;
 				if (file.Open(filename, "rb"))
 				{
 //				CWaitCursor wait;
@@ -3170,7 +3185,7 @@ void Project::HandleCommand(LC_COMMANDS id, unsigned long nParam)
 
 		case LC_FILE_3DS:
 		{
-#ifdef _WINDOWS
+#ifdef LC_WINDOWS
 			Export3DStudio();
 #endif
 		} break;
@@ -3209,15 +3224,16 @@ void Project::HandleCommand(LC_COMMANDS id, unsigned long nParam)
 			if (SystemDoDialog(LC_DLG_HTML, &opts))
 			{
 				FILE* f;
-				char* ext, fn[LC_MAXPATH];
+				char* ext = ".bmp", fn[LC_MAXPATH];
 				int i;
 				unsigned short last = GetLastStep();
 
 				switch (opts.imdlg.imopts.format)
 				{
-				case 0: ext = ".bmp"; break;
-				case 1: ext = ".gif"; break;
-				case 2: ext = ".jpg"; break;
+				case LC_IMAGE_BMP: ext = ".bmp"; break;
+				case LC_IMAGE_GIF: ext = ".gif"; break;
+				case LC_IMAGE_JPG: ext = ".jpg"; break;
+				case LC_IMAGE_PNG: ext = ".png"; break;
 				}
 /*
 				// Create destination folder
@@ -3445,7 +3461,7 @@ void Project::HandleCommand(LC_COMMANDS id, unsigned long nParam)
 				while (fread(&bt, 4, 1, f))
 				{
 					u = (((unsigned char)(bt[3])|((unsigned short)(bt[2]) << 8))|(((unsigned long)(bt[1])) << 16)) + bt[0] * 16581375;
-					sprintf(tmp, "%d", u);
+					sprintf(tmp, "%d", (int)u);
 					pInfo = FindPieceInfo(tmp);
 
 					fread(&tmp, 9, 1, f);
@@ -3494,7 +3510,7 @@ void Project::HandleCommand(LC_COMMANDS id, unsigned long nParam)
 			}
 
 			strcpy(fn, opts.outpath);
-			if (ptr = strrchr (fn, '.'))
+			if ((ptr = strrchr (fn, '.')))
 				*ptr = 0;
 			strcat (fn, ".inc");
 			f = fopen(fn, "wt");
@@ -3536,9 +3552,20 @@ void Project::HandleCommand(LC_COMMANDS id, unsigned long nParam)
 			const float mycol[4][4] = { { 1.0f, 0.5f, 0.2f, 1 }, { 0.2f, 0.4f, 0.9f, 5 }, 
 				{ 0.6f, 0.4f, 0.4f, 24 }, { 0.1f, 0.7f, 0.8f, 26 }};
 		 
-			for (u = 0; u < 4; u++)
-				fprintf(f, "\n#declare lg_%s = texture {\n pigment { rgb <%.2f, %.2f, %.2f> }\n finish {\n  ambient 0.1\n  phong 0.3\n  phong_size 20\n }\n}\n",
-					altcolornames[(int)mycol[u][3]], mycol[u][0], mycol[u][1], mycol[u][2]);
+			if (strlen(opts.libpath))
+			{
+				for (u = 0; u < 4; u++)
+					fprintf(f, "\n#declare lg_%s = texture {\n pigment { rgb <%.2f, %.2f, %.2f> }\n finish {\n  ambient 0.1\n  phong 0.3\n  phong_size 20\n }\n}\n",
+						altcolornames[(int)mycol[u][3]], mycol[u][0], mycol[u][1], mycol[u][2]);
+			}
+			else
+			{
+				fputs("#include \"colors.inc\"\n\n", f);
+
+				for (u = 0; u < LC_MAXCOLORS; u++)
+					fprintf(f, "\n#declare lg_%s = texture {\n pigment { rgbf <%.2f, %.2f, %.2f, %.2f> }\n finish {\n  ambient 0.1\n  phong 0.3\n  phong_size 20\n }\n}\n",
+					lg_colors[u], (float)ColorArray[u][0]/255, (float)ColorArray[u][1]/255, (float)ColorArray[u][2]/255, ((ColorArray[u][3] == 255) ? 0.0f : 0.9f));
+			}
 
 			// if not in lgeo, create it
 			fputs("\n// The next objects (if any) were generated by LeoCAD.\n\n", f);
@@ -3555,7 +3582,7 @@ void Project::HandleCommand(LC_COMMANDS id, unsigned long nParam)
 					{
 						char name[20];
 						strcpy(name, pInfo->m_strName);
-						while (ptr = strchr(name, '-'))
+						while ((ptr = strchr(name, '-')))
 							*ptr = '_';
 						fprintf(f, "#declare lc_%s = union {\n", name);
 
@@ -3670,12 +3697,12 @@ void Project::HandleCommand(LC_COMMANDS id, unsigned long nParam)
 			}
 
 			fclose(f);
-			if (ptr = strrchr (fn, '.'))
+			if ((ptr = strrchr (fn, '.')))
 				*ptr = 0;
 			strcat (fn, ".pov");
 			f = fopen(fn, "wt");
 
-			if (ptr = strrchr (fn, '.'))
+			if ((ptr = strrchr (fn, '.')))
 				*ptr = 0;
 			ptr = strrchr (fn, '\\');
 			if (!ptr)
@@ -3691,8 +3718,8 @@ void Project::HandleCommand(LC_COMMANDS id, unsigned long nParam)
 			m_pViewCameras[m_nActiveViewport]->GetTarget(target);
 			m_pViewCameras[m_nActiveViewport]->GetUp(up);
 
-			fprintf(f, "\ncamera {\n  sky<%1g,%1g,%1g>\n  location <%1g, %1g, %1g>\n  look_at <%1g, %1g, %1g>\n}\n\n",
-				up[0], up[1], up[2], eye[1], eye[0], eye[2], target[1], target[0], target[2]);
+			fprintf(f, "\ncamera {\n  sky<%1g,%1g,%1g>\n  location <%1g, %1g, %1g>\n  look_at <%1g, %1g, %1g>\n  angle %.0f\n}\n\n",
+				up[0], up[1], up[2], eye[1], eye[0], eye[2], target[1], target[0], target[2], m_pViewCameras[m_nActiveViewport]->m_fovy);
 			fprintf(f, "background { color rgb <%1g, %1g, %1g> }\n\nlight_source { <0, 0, 20> White shadowless }\n\n",
 				m_fBackground[0], m_fBackground[1], m_fBackground[2]);
 
@@ -3706,7 +3733,7 @@ void Project::HandleCommand(LC_COMMANDS id, unsigned long nParam)
 				{
 					char* ptr;
 					sprintf(name, "lc_%s", pPiece->GetPieceInfo()->m_strName);
-					while (ptr = strchr(name, '-'))
+					while ((ptr = strchr(name, '-')))
 						*ptr = '_';
 				}
 				else
@@ -3730,7 +3757,7 @@ void Project::HandleCommand(LC_COMMANDS id, unsigned long nParam)
 
 			if (opts.render)
 			{
-#ifdef _WINDOWS
+#ifdef LC_WINDOWS
 				// TODO: Linux support
 				char buf[600];
 				char tmp[LC_MAXPATH], out[LC_MAXPATH];
@@ -3798,7 +3825,7 @@ void Project::HandleCommand(LC_COMMANDS id, unsigned long nParam)
 			FILE* mat = fopen(buf, "wt");
 			fputs("# Colors used by LeoCAD\n# You need to add transparency values\n#\n\n", mat);
 			for (i = 0; i < LC_MAXCOLORS; i++)
-				fprintf(mat, "newmtl %s\nKd %.2f %.2f %.2f\n\n", altcolornames[i], FlatColorArray[i][0], FlatColorArray[i][1], FlatColorArray[i][2]);
+				fprintf(mat, "newmtl %s\nKd %.2f %.2f %.2f\n\n", altcolornames[i], (float)FlatColorArray[i][0]/255, (float)FlatColorArray[i][1]/255, (float)FlatColorArray[i][2]/255);
 			fclose(mat);
 
 			for (pPiece = m_pPieces; pPiece; pPiece = pPiece->m_pNext)
@@ -3886,7 +3913,7 @@ void Project::HandleCommand(LC_COMMANDS id, unsigned long nParam)
 
 		case LC_FILE_LIBRARY:
 		{
-			File file(true);
+			FileMem file;
 			FileSave(&file, true);
 
 			if (SystemDoDialog(LC_DLG_LIBRARY, NULL))
@@ -4007,7 +4034,7 @@ void Project::HandleCommand(LC_COMMANDS id, unsigned long nParam)
 
 			if (m_pClipboard[m_nCurClipboard] != NULL)
 				delete m_pClipboard[m_nCurClipboard];
-			m_pClipboard[m_nCurClipboard] = new File(true);
+			m_pClipboard[m_nCurClipboard] = new FileMem;
 
 			int i = 0;
 			Piece* pPiece;
@@ -4151,7 +4178,7 @@ void Project::HandleCommand(LC_COMMANDS id, unsigned long nParam)
 								if (a > max) 
 									max = a;
 
-					sprintf(groups[j]->m_strName, "Pasted Group #%0.2d", max+1);
+					sprintf(groups[j]->m_strName, "Pasted Group #%.2d", max+1);
 					groups[j]->m_pNext = m_pGroups;
 					m_pGroups = groups[j];
 				}
@@ -4402,11 +4429,53 @@ void Project::HandleCommand(LC_COMMANDS id, unsigned long nParam)
 		case LC_PIECE_MINIFIG:
 		{
 			LC_MINIFIGDLG_OPTS opts;
+	 		const unsigned char colors[15] = { 0, 6, 4, 22, 0, 0, 6, 6, 22, 22, 9, 9, 9, 22, 22 };
+			const float pos[15][3] = { {0,0,3.84f},{0,0,3.84f},{0,0,2.88f},{0,0,2.96f},{0,0,2.56f},{0,0,2.56f},{0.9f,-0.62f,1.76f},
+		{-0.9f,-0.62f,1.76f},{0.92f,-0.62f,1.76f},{-0.92f,-0.62f,1.76f},{0,0,1.6f},{0,0,1.12f},{0,0,1.12f},{0.42f,0,0},{-0.42f,0,0} };
+			int i;
+
+			for (i = 0; i < 15; i++)
+			{
+			    opts.info[i] = NULL;
+			    opts.colors[i] = colors[i];
+			    opts.pos[i][0] = pos[i][0];
+			    opts.pos[i][1] = pos[i][1];
+			    opts.pos[i][2] = pos[i][2];
+			    opts.rot[i][0] = 0;
+			    opts.rot[i][1] = 0;
+			    opts.rot[i][2] = 0;
+			}
+
+			for (i = 0; i < 13; i++)
+			{
+			    if (i == 3 || i == 7 || i == 8 || i == 9)
+			      continue;
+
+			    PieceInfo* pInfo = FindPieceInfo(mfwpieceinfo[i].name);
+			    if (pInfo == NULL)
+			      continue;
+
+			    if (i == 6)
+			    {
+				opts.info[6] = pInfo;
+				opts.info[7] = pInfo;
+				pInfo->AddRef();
+				pInfo->AddRef();
+				opts.rot[6][0] = 45;
+				opts.rot[6][2] = 90;
+				opts.rot[7][0] = 45;
+				opts.rot[7][2] = 90;
+			    }
+			    else
+			    {
+				opts.info[i] = pInfo;
+				pInfo->AddRef();
+			    }
+			}
 
 			if (SystemDoDialog(LC_DLG_MINIFIG, &opts))
 			{
 				SelectAndFocusNone(false);
-				int i;
 
 				for (i = 0; i < 15; i++)
 				{
@@ -4442,7 +4511,7 @@ void Project::HandleCommand(LC_COMMANDS id, unsigned long nParam)
 							if (i > max)
 								max = i;
 				pGroup = new Group;
-				sprintf(pGroup->m_strName, "Minifig #%0.2d", max+1);
+				sprintf(pGroup->m_strName, "Minifig #%.2d", max+1);
 
 				pGroup->m_pNext = m_pGroups;
 				m_pGroups = pGroup;
@@ -4464,6 +4533,10 @@ void Project::HandleCommand(LC_COMMANDS id, unsigned long nParam)
 				SetModifiedFlag(true);
 				CheckPoint("Minifig");
 			}
+
+			for (i = 0; i < 15; i++)
+			  if (opts.info[i])
+			    opts.info[i]->DeRef();
 		} break;
 
 		case LC_PIECE_ARRAY:
@@ -4499,7 +4572,7 @@ void Project::HandleCommand(LC_COMMANDS id, unsigned long nParam)
 					opts.fMove[2] *= 0.96f;
 				}
 
-				Piece *pPiece, *pFirst, *pLast = NULL;
+				Piece *pPiece, *pFirst = NULL, *pLast = NULL;
 				float bs[6] = { 10000, 10000, 10000, -10000, -10000, -10000 };
 				int sel = 0;
 				unsigned long i, j, k;
@@ -4648,7 +4721,7 @@ void Project::HandleCommand(LC_COMMANDS id, unsigned long nParam)
 					if (sscanf(pGroup->m_strName, "Group #%d", &i) == 1)
 						if (i > max)
 							max = i;
-			sprintf(name, "Group #%0.2d", max+1);
+			sprintf(name, "Group #%.2d", max+1);
 
 			if (SystemDoDialog(LC_DLG_GROUP, name))
 			{
@@ -4993,10 +5066,10 @@ void Project::HandleCommand(LC_COMMANDS id, unsigned long nParam)
 			if (m_pPieces == 0) break;
 
 			bool bControl = IsKeyDown(KEY_CONTROL);
-			double modelMatrix[16], projMatrix[16];
+			GLdouble modelMatrix[16], projMatrix[16];
 			float up[3], eye[3], target[3];
 			float bs[6] = { 10000, 10000, 10000, -10000, -10000, -10000 };
-			int	viewport[4], out, x, y, w, h;
+			GLint viewport[4], out, x, y, w, h;
 
 			for (Piece* pPiece = m_pPieces; pPiece; pPiece = pPiece->m_pNext)
 				if (pPiece->IsVisible(m_bAnimation ? m_nCurFrame : m_nCurStep, m_bAnimation))
@@ -5671,9 +5744,9 @@ PieceInfo* Project::FindPieceInfo(char* name)
 
 BoundingBox* Project::FindObjectFromPoint(int x, int y)
 {
-	double px, py, pz, rx, ry, rz;
-	double modelMatrix[16], projMatrix[16];
-	int	viewport[4];
+	GLdouble px, py, pz, rx, ry, rz;
+	GLdouble modelMatrix[16], projMatrix[16];
+	GLint viewport[4];
 	Piece* pPiece;
 	Camera* pCamera;
 	Light* pLight;
@@ -5910,7 +5983,7 @@ void Project::StartTracking(int mode)
 {
 	SystemCaptureMouse();
 	m_nTracking = mode;
-	m_pTrackFile = new File(true);
+	m_pTrackFile = new FileMem;
 	FileSave(m_pTrackFile, true);
 }
 
@@ -6185,8 +6258,7 @@ bool Project::OnKeyDown(char nKey, bool bControl, bool bShift)
 				if (bShift)
 				{
 					// Focus the previous visible piece.
-					Piece* pBest;
-					pPiece = pFocus;
+					Piece* pBest = pPiece = pFocus;
 					for (;;)
 					{
 						if (pPiece->IsVisible(m_bAnimation ? m_nCurFrame : m_nCurStep, m_bAnimation))
@@ -6343,9 +6415,9 @@ bool Project::OnKeyDown(char nKey, bool bControl, bool bShift)
 					} break;
 				}
 
-				double modelMatrix[16], projMatrix[16], p1[3], p2[3], p3[3];
+				GLdouble modelMatrix[16], projMatrix[16], p1[3], p2[3], p3[3];
 				float ax, ay;
-				int	 viewport[4];
+				GLint viewport[4];
 				
 				glGetDoublev(GL_MODELVIEW_MATRIX, modelMatrix);
 				glGetDoublev(GL_PROJECTION_MATRIX, projMatrix);
@@ -6403,8 +6475,8 @@ bool Project::OnKeyDown(char nKey, bool bControl, bool bShift)
 
 void Project::OnLeftButtonDown(int x, int y)
 {
-	double modelMatrix[16], projMatrix[16], point[3];
-	int	viewport[4];
+	GLdouble modelMatrix[16], projMatrix[16], point[3];
+	GLint viewport[4];
 
 	if (IsDrawing())
 		return;
@@ -6679,8 +6751,8 @@ void Project::OnLeftButtonDown(int x, int y)
 
 void Project::OnLeftButtonDoubleClick(int x, int y)
 {
-	double modelMatrix[16], projMatrix[16], point[3];
-	int	viewport[4];
+	GLdouble modelMatrix[16], projMatrix[16], point[3];
+	GLint viewport[4];
 
 	if (IsDrawing())
 		return;
@@ -6755,8 +6827,8 @@ void Project::OnLeftButtonUp(int x, int y)
 
 void Project::OnRightButtonDown(int x, int y)
 {
-	double modelMatrix[16], projMatrix[16], point[3];
-	int	viewport[4];
+	GLdouble modelMatrix[16], projMatrix[16], point[3];
+	GLint viewport[4];
 
 	if (StopTracking(false))
 		return;
@@ -6844,8 +6916,8 @@ void Project::OnMouseMove(int x, int y)
 	if (IsDrawing())
 		return;
 
-	double modelMatrix[16], projMatrix[16], tmp[3];
-	int	viewport[4];
+	GLdouble modelMatrix[16], projMatrix[16], tmp[3];
+	GLint viewport[4];
 	float ptx, pty, ptz;
 
 	LoadViewportProjection();
@@ -7061,3 +7133,16 @@ void Project::OnMouseMove(int x, int y)
 		} break;
 	}
 }
+
+
+
+
+
+
+
+
+
+
+
+
+

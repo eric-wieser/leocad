@@ -3,6 +3,10 @@
 
 #include "defines.h"
 #include "typedefs.h"
+#ifdef LC_WINDOWS
+#include "stdafx.h"
+#endif
+#include <GL/gl.h>
 
 typedef enum 
 {
@@ -26,10 +30,10 @@ class Matrix;
 
 typedef struct UNDOINFO
 {
-	File file;
+	FileMem file;
 	char strText[21];
 	UNDOINFO* pNext;
-	UNDOINFO() : file(true) { pNext = NULL; };
+	UNDOINFO() { pNext = NULL; };
 } UNDOINFO;
 
 class Project

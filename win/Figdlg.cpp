@@ -82,11 +82,11 @@ BOOL CMinifigDlg::OnInitDialog()
 
 	for (i = 0; i < MFW_PIECES; i++)
 	{
-		PieceInfo* pInfo = project->FindPieceInfo(m_pMFWnd->partinfo[i].name);
+		PieceInfo* pInfo = project->FindPieceInfo(mfwpieceinfo[i].name);
 		if (pInfo != NULL)
 		{
 			UINT id = 0;
-			switch (m_pMFWnd->partinfo[i].type)
+			switch (mfwpieceinfo[i].type)
 			{
 				case MF_HAT: id = IDC_MF_HAT; break;
 				case MF_HEAD: id = IDC_MF_HEAD; break;
@@ -106,14 +106,14 @@ BOOL CMinifigDlg::OnInitDialog()
 			int pos;
 			if (i != 29)
 			{
-				pos = pCombo->AddString(m_pMFWnd->partinfo[i].description);
+				pos = pCombo->AddString(mfwpieceinfo[i].description);
 				pCombo->SetItemDataPtr(pos, pInfo);
 			}
 
 			if (id == IDC_MF_HANDL || id == IDC_MF_TOOLL || id == IDC_MF_SHOEL)
 			{
 				pCombo = (CComboBox*)GetDlgItem(id+1);
-				pos = pCombo->AddString(m_pMFWnd->partinfo[i].description);
+				pos = pCombo->AddString(mfwpieceinfo[i].description);
 				pCombo->SetItemDataPtr(pos, pInfo);
 			}
 			if (i == 6) i++;
@@ -131,7 +131,7 @@ BOOL CMinifigDlg::OnInitDialog()
 		((CComboBox*)GetDlgItem(i))->SetCurSel(0);
 	((CComboBox*)GetDlgItem(IDC_MF_HAT))->SetCurSel(6);
 	((CComboBox*)GetDlgItem(IDC_MF_HEAD))->SetCurSel(4);
-	((CComboBox*)GetDlgItem(IDC_MF_TORSO))->SetCurSel(15);
+	((CComboBox*)GetDlgItem(IDC_MF_TORSO))->SetCurSel(18);
 
 	return TRUE;  // return TRUE unless you set the focus to a control
 	              // EXCEPTION: OCX Property Pages should return FALSE
@@ -139,10 +139,6 @@ BOOL CMinifigDlg::OnInitDialog()
 
 BOOL CMinifigDlg::DestroyWindow() 
 {
-	for (int i = 0; i < 15; i++)
-		if (m_pMFWnd->m_pFig->info[i])
-			m_pMFWnd->m_pFig->info[i]->DeRef();
-
 	m_pMFWnd->DestroyWindow();
 	delete m_pMFWnd;
 	
@@ -174,6 +170,9 @@ void CMinifigDlg::OnPieceSelEndOK(UINT nID)
 		{
 			m_pMFWnd->m_pFig->pos[0][2] = 3.92f;
 			m_pMFWnd->m_pFig->pos[1][2] = 3.92f;
+
+			if (strcmp (pInfo->m_strName,"4498") == 0)
+				m_pMFWnd->m_pFig->rot[3][2] = 180.0f;
 		}
 		else
 		{
@@ -241,6 +240,12 @@ void CMinifigDlg::OnPieceSelEndOK(UINT nID)
 		{ z = 1.24f; y = -0.34f; }
 		if (strcmp (pInfo->m_strName,"3841") == 0)
 		{ z = 2.24f; y = -1.34f; rz = 180; }
+		if (strcmp (pInfo->m_strName,"4499") == 0)
+		{ rz = 10; z = 1.52f; }
+		if (strcmp (pInfo->m_strName,"3852") == 0)
+		{ rz = -90; x = 0.90f; y = -0.8f; z = 1.84f; }
+		if (strcmp (pInfo->m_strName,"30152") == 0)
+		{ z = 3.06f; y = -2.16f; }
 
 		if (nID == IDC_MF_TOOLR)
 			x = -x;

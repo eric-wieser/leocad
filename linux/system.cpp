@@ -23,6 +23,8 @@ char* strupr(char* string)
     if ('a' <= *cp && *cp <= 'z')
       *cp += 'A' - 'a';
   }
+
+  return string;
 }
 
 char* strlwr(char* string)
@@ -33,6 +35,8 @@ char* strlwr(char* string)
     if ('A' <= *cp && *cp <= 'Z')
       *cp += 'a' - 'A';
   }
+
+  return string;
 }
 
 
@@ -163,6 +167,8 @@ void SystemUpdateAction(int new_action, int old_action)
     button = tool_toolbar.rotview; xpm = cr_rotv; x = 15; y = 15; break;
   case LC_ACTION_ROLL:
     button = tool_toolbar.roll; xpm = cr_roll; x = 15; y = 15; break;
+  default:
+    return;
   }
 
   GdkBitmap *bitmap;
@@ -201,6 +207,7 @@ void SystemUpdateColorList(int new_color)
 
 void SystemUpdateRenderingMode(bool bBackground, bool bFast)
 {
+  ignore_commands = true;
   if (bFast)
   {
     gtk_widget_set_sensitive (main_toolbar.bg, TRUE);
@@ -213,6 +220,7 @@ void SystemUpdateRenderingMode(bool bBackground, bool bFast)
   }
 
   gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON(main_toolbar.fast), bFast);
+  ignore_commands = false;
 }
 
 void SystemUpdateUndoRedo(char* undo, char* redo)
@@ -317,12 +325,14 @@ void SystemUpdateTime(bool bAnimation, int nTime, int nTotal)
 
 void SystemUpdateAnimation(bool bAnimation, bool bAddKeys)
 {
+  ignore_commands = true;
   gtk_widget_set_sensitive (anim_toolbar.play, bAnimation);
   gtk_widget_set_sensitive (anim_toolbar.stop, FALSE);
   gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON(anim_toolbar.anim), bAnimation);
   gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON(anim_toolbar.keys), bAddKeys);
   gtk_label_set_text (GTK_LABEL(GTK_BIN(main_menu.piece_copy_keys)->child), 
       bAnimation ? "Copy Keys from Instructions" : "Copy Keys from Animation");
+  ignore_commands = false;
 }
 
 void SystemUpdateMoveSnap(unsigned short move_snap)
@@ -548,6 +558,7 @@ bool SystemDoDialog(int mode, void* param)
     } break;
 
     case LC_DLG_MINIFIG: {
+      return minifigdlg_execute(param) == LC_OK;
     } break;
 
     case LC_DLG_PROPERTIES: {
@@ -560,7 +571,12 @@ bool SystemDoDialog(int mode, void* param)
     case LC_DLG_STEPCHOOSE: {
     } break;
 
+    case LC_DLG_EDITGROUPS: {
+      return groupeditdlg_execute(param) == LC_OK;
+    } break;
+
     case LC_DLG_GROUP: {
+      return groupdlg_execute(param) == LC_OK;
     } break;
   }
 
@@ -608,6 +624,7 @@ void SystemRedrawView()
 
 void SystemPieceComboAdd(char* name)
 {
+  piececombo_add(name);
 }
 
 
@@ -619,4 +636,8 @@ void SystemReleaseMouse()
 {
 }
 
-
+void SystemSwapBuffers()
+{
+  if (drawing_area)
+    gtk_gl_area_swapbuffers (GTK_GL_AREA(drawing_area));
+}

@@ -60,7 +60,7 @@ END_MESSAGE_MAP()
 /////////////////////////////////////////////////////////////////////////////
 // CColorPicker message handlers
 
-LONG CColorPicker::OnSelEndOK(UINT lParam, LONG wParam)
+LONG CColorPicker::OnSelEndOK(UINT /*lParam*/, LONG wParam)
 {
 	m_bActive = FALSE;
 	SetColorIndex(wParam);
@@ -72,7 +72,7 @@ LONG CColorPicker::OnSelEndOK(UINT lParam, LONG wParam)
 	return TRUE;
 }
 
-LONG CColorPicker::OnSelEndCancel(UINT lParam, LONG wParam)
+LONG CColorPicker::OnSelEndCancel(UINT /*lParam*/, LONG wParam)
 {
     m_bActive = FALSE;
 
@@ -184,7 +184,7 @@ int CColorPicker::GetColorIndex()
 void CColorPicker::SetColorIndex(int nColor)
 {
 	if (nColor != -1)
-		m_crColor = RGB(FlatColorArray[nColor][0]*255, FlatColorArray[nColor][1]*255, FlatColorArray[nColor][2]*255);
+		m_crColor = RGB(FlatColorArray[nColor][0], FlatColorArray[nColor][1], FlatColorArray[nColor][2]);
 
 	if (m_nColor != nColor)
 	{

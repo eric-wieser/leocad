@@ -1,4 +1,5 @@
-### ALL CONFIGURATION SHOULD IN CONFIG.MK, NOT HERE
+### $Id$
+### ALL CONFIGURATION SHOULD BE IN CONFIG.MK, NOT HERE
 include config.mk
 
 ### Module directories
@@ -28,12 +29,17 @@ OBJ := \
 
 
 ### link the program
-.PHONY: all
+.PHONY: all static
 
 all: $(BIN)
 
+static: bin/leocad.static
+
 bin/leocad: $(OBJ) bin
 	$(CC) -o $@ $(OBJ) $(LIBS)
+
+bin/leocad.static: $(OBJ) bin
+	$(CC) -static -o $@ $(OBJ) $(LIBS)
 
 bin:
 	mkdir bin
@@ -109,17 +115,25 @@ source-zip: arch/leocad-$(VERSION)-src.zip
 
 arch/leocad-$(VERSION)-linux.zip: arch all
 	rm -f $@
-	zip -r $@ bin docs examples
+	zip -r $@ *.txt bin docs examples -x 'CVS/*' -x '*/CVS/*' -x '*/core'
 
 arch/leocad-$(VERSION)-linux.tgz: arch all
+	mkdir leocad-$(VERSION)
+	cp bin/leocad leocad-$(VERSION)
+	cp CREDITS.txt leocad-$(VERSION)/CREDITS
+	cp README.txt leocad-$(VERSION)/README
+	cp docs/INSTALL.txt leocad-$(VERSION)/INSTALL
+	cp docs/LINUX.txt leocad-$(VERSION)/LINUX
 	rm -f $@
-	tar cvzf $@ bin docs examples
+	tar -cvzf $@ leocad-$(VERSION)
+	rm -rf leocad-$(VERSION)
 
 arch/leocad-$(VERSION)-src.tgz: arch veryclean
 	rm -f $@
-	( cd .. ; tar --exclude=leocad/arch/\* -cvzf leocad/$@ leocad )
+	( cd .. ; tar --exclude=leocad/arch/\* --exclude=CVS \
+	-cvzf leocad/$@ leocad )
 
 arch/leocad-$(VERSION)-src.zip: arch veryclean
 	rm -f $@
-	( cd .. ; zip -r leocad/$@ leocad -x leocad/arch/\* )
+	( cd .. ; zip -r leocad/$@ leocad -x '*/arch/*' -x '*/CVS/*' )
 

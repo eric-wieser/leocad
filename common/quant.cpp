@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <math.h>
 #include <memory.h>
+#include <string.h>
 #include "quant.h"
 
 //#define FAST		// improves speed but uses a lot of memory
@@ -396,7 +397,7 @@ static int quantize_image(unsigned char *in, unsigned char *out, int width, int 
 		long i = 0, j = 0;
 		long r_pix = 0, g_pix = 0, b_pix = 0;
 		long offset = 0, dir = 0;
-		long two_val = 0, odd_scanline = 0;
+		long odd_scanline = 0;
 		long err_len = (width + 2) * 3;
 		unsigned char *range_tbl = NULL, *range = NULL;
 		short *lookup = NULL, *erowerr = NULL, *orowerr = NULL;

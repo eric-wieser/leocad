@@ -11,6 +11,8 @@
 #include "project.h"
 #include "pieceinf.h"
 #include "globals.h"
+#include "system.h"
+#include "library.h"
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
@@ -114,7 +116,7 @@ BOOL CLibraryDlg::OnInitDialog()
 	m_TreeImages.Create(IDB_PARTICONS, 16, 0, RGB (0,128,128));
 	m_Tree.SetImageList(&m_TreeImages, TVSIL_NORMAL);
 
-	File idx(false);
+	FileDisk idx;
 	char filename[LC_MAXPATH];
 
 	// Read the piece library index.
@@ -290,252 +292,46 @@ BOOL CLibraryDlg::OnCommand(WPARAM wParam, LPARAM lParam)
 			if (filedlg.DoModal() != IDOK)
 				return TRUE;
 
-			CFile up;
-			BYTE bt;
-			if (!up.Open (filedlg.GetPathName(), CFile::modeRead | CFile::typeBinary))
-				return TRUE;
-
-			up.Seek(32, CFile::begin);
-			up.Read(&bt, 1);
-			if (bt != 2)
-			{
-				AfxMessageBox("Wrong version !", MB_ICONWARNING|MB_OK);
-				return TRUE;
-			}
-
-
-/*
-			up.Read(&bt, 1); // update number
-
-			CWaitCursor wc;
-			char p[260];
-			GetModuleFileName (AfxGetInstanceHandle(), (char*)&p, 260);
-			if (char* ptr = strrchr (p,'\\')) *ptr = 0;
-			CString app = p;
-			app += "\\";
-
-			DeleteFile(app + "PIECES-B.OLD");
-			DeleteFile(app + "PIECES-I.OLD");
-			MoveFile(app + "PIECES.BIN", app + "PIECES-B.OLD");
-			MoveFile(app + "PIECES.IDX", app + "PIECES-I.OLD");
-
-			CFile oldbin,oldidx,newbin,newidx;
-			if ((!oldbin.Open (app + "PIECES-B.OLD", CFile::modeRead | CFile::typeBinary)) ||
-				(!oldidx.Open (app + "PIECES-I.OLD", CFile::modeRead | CFile::typeBinary)) ||
-				(!newbin.Open (app + "PIECES.BIN", CFile::modeCreate | CFile::modeWrite | CFile::typeBinary)) ||
-				(!newidx.Open (app + "PIECES.IDX", CFile::modeCreate | CFile::modeWrite | CFile::typeBinary)))
-			{
-				AfxMessageBox("Cannot open file.", MB_OK|MB_ICONERROR);
-				return TRUE;
-			}
-
-			char tmp[200];
-			WORD changes, count, newcount = 0, i, j;
-			up.Seek(-(LONG)sizeof(changes), CFile::end);
-			up.Read(&changes, sizeof(changes));
-			up.Seek(34, CFile::begin);
-
-			oldidx.Seek (-(LONG)(sizeof(count)), CFile::end);
-			oldidx.Read (&count, sizeof(count));
-			oldidx.Seek (0, CFile::begin);
-			oldidx.Read(tmp, 33);
-			newidx.Write(tmp, 33);
-			oldbin.Read(tmp, 33);
-			newbin.Write(tmp, 33);
-
-			typedef struct { 
-				char name[9];
-				BYTE type;
-				DWORD offset;
-			} UPDATE_INFO;
-			
-			#define UPDATE_DELETE       0x00
-			#define UPDATE_DESCRIPTION  0x01
-			#define UPDATE_DRAWINFO     0x02
-			#define UPDATE_NEWPIECE     0x04
-
-			UPDATE_INFO* upinfo = (UPDATE_INFO*)malloc(sizeof(UPDATE_INFO)*changes);
-			memset(upinfo, 0, sizeof(UPDATE_INFO)*changes);
-
-			DWORD nextoff, binoff, cs;
-			for (i = 0; i < changes; i++)
-			{
-				up.Read(&upinfo[i].name, 8);
-				up.Read(&upinfo[i].type, 1);
-				upinfo[i].offset = up.GetPosition();
-
-				if ((upinfo[i].type & UPDATE_DESCRIPTION) ||
-					(upinfo[i].type & UPDATE_NEWPIECE))
-					up.Seek(64, CFile::current);
-
-				if ((upinfo[i].type & UPDATE_DRAWINFO) ||
-					(upinfo[i].type & UPDATE_NEWPIECE))
-				{
-					up.Seek(sizeof(short[6]), CFile::current);
-					up.Read(&cs, sizeof(cs));
-					up.Seek(cs, CFile::current);
-				}
-			}
-
-			CProgressDlg dlg(_T("Updating Library"));
-			dlg.Create(this);
-			dlg.SetRange (0, count);
-
-			void* membuf;
-			for (i = 0; i < count; i++)
-			{
-				char name[9];
-				name[8] = 0;
-				oldidx.Read (&name, 8);
-
-				dlg.StepIt();
-				if(dlg.CheckCancelButton())
-				if(AfxMessageBox(IDS_CANCEL_PROMPT, MB_YESNO) == IDYES)
-				{
-					free(upinfo);
-					return TRUE;
-				}
-
-				for (j = 0; j < changes; j++)
-				if (strcmp(name, upinfo[j].name) == 0)
-				{
-					if (upinfo[j].type == UPDATE_DELETE)
-					{
-						oldidx.Seek(64+sizeof(short[6])+sizeof(DWORD), CFile::current);
-						break;
-					}
-					newcount++;
-					up.Seek(upinfo[j].offset, CFile::begin);
-					newidx.Write(name, 8);
-
-					if (upinfo[j].type & UPDATE_DESCRIPTION)
-					{
-						up.Read(&tmp, 64);
-						oldidx.Seek(64, CFile::current);
-					}
-					else
-						oldidx.Read(&tmp, 64);
-					newidx.Write(tmp, 64);
-					dlg.SetStatus(tmp);
-
-					if (upinfo[j].type & UPDATE_DRAWINFO)
-					{
-						up.Read(&tmp, sizeof(short[6]));
-						oldidx.Seek(sizeof(short[6]), CFile::current);
-					}
-					else
-						oldidx.Read(&tmp, sizeof(short[6]));
-					newidx.Write(tmp, sizeof(short[6]));
-					binoff = newbin.GetLength();
-					newidx.Write(&binoff, sizeof(binoff));
-
-					if (upinfo[j].type & UPDATE_DRAWINFO)
-					{
-						up.Read(&cs, sizeof(cs));
-						oldidx.Seek(sizeof(binoff), CFile::current);
-
-						membuf = malloc(cs);
-						up.Read(membuf, cs);
-						newbin.Write(membuf, cs);
-						free (membuf);
-					}
-					else
-					{
-						oldidx.Read(&binoff, sizeof(binoff));
-
-						if (i == count-1)
-							nextoff = oldbin.GetLength();
-						else
-						{
-							oldidx.Seek(72+sizeof(short[6]), CFile::current);
-							oldidx.Read(&nextoff, sizeof(nextoff));
-							oldidx.Seek(-(LONG)(72+sizeof(short[6])+sizeof(DWORD)), CFile::current);
-						}
-
-						membuf = malloc (nextoff - binoff);
-						oldbin.Seek(binoff, CFile::begin);
-						oldbin.Read(membuf, nextoff - binoff);
-						newbin.Write(membuf, nextoff - binoff);
-						free (membuf);
-					}
-					break;
-				}
-
-				// not changed, just copy
-				if (j == changes)
-				{
-					newcount++;
-					newidx.Write(name, 8);
-					oldidx.Read(tmp, 64+sizeof(short[6]));
-					newidx.Write(tmp, 64+sizeof(short[6]));
-					binoff = newbin.GetLength();
-					newidx.Write(&binoff, sizeof(binoff));
-					oldidx.Read(&binoff, sizeof(binoff));
-
-					tmp[64] = 0;
-					dlg.SetStatus(tmp);
-
-					if (i == count-1)
-						nextoff = oldbin.GetLength();
-					else
-					{
-						oldidx.Seek(72+sizeof(short[6]), CFile::current);
-						oldidx.Read(&nextoff, sizeof(nextoff));
-						oldidx.Seek(-(LONG)(72+sizeof(short[6])+sizeof(DWORD)), CFile::current);
-					}
-
-					membuf = malloc (nextoff - binoff);
-					oldbin.Seek(binoff, CFile::begin);
-					oldbin.Read(membuf, nextoff - binoff);
-					newbin.Write(membuf, nextoff - binoff);
-					free (membuf);
-				}
-			}
-
-			// now add new pieces
-			for (j = 0; j < changes; j++)
-			if (upinfo[j].type == UPDATE_NEWPIECE)
-			{
-				newcount++;
-				newidx.Write(upinfo[j].name, 8);
-				up.Seek(upinfo[j].offset, CFile::begin);
-				up.Read(&tmp, 64+sizeof(short[6]));
-				newidx.Write(tmp, 64+sizeof(short[6]));
-				binoff = newbin.GetLength();
-				newidx.Write(&binoff, sizeof(binoff));
-
-				up.Read(&cs, sizeof(cs));
-				membuf = malloc(cs);
-				up.Read(membuf, cs);
-				newbin.Write(membuf, cs);
-				free (membuf);
-			}
-
-			WORD moved;
-			up.Seek(-(LONG)(sizeof(WORD)*2), CFile::end);
-			up.Read(&moved, sizeof(WORD));
-			cs = sizeof(WORD)+moved*16;
-			up.Seek(-(LONG)(cs), CFile::current);
-			membuf = malloc(cs);
-			up.Read(membuf, cs);
-			newidx.Write(membuf, cs);
-			free (membuf);
-
-			nextoff = newbin.GetLength();
-			newidx.Write(&nextoff, sizeof(DWORD));
-			newidx.Write(&newcount, sizeof(WORD));
-
-			free(upinfo);
-			oldidx.Close();
-			oldbin.Close();
-			newidx.Close();
-			newbin.Close();
-			up.Close();
+			LoadUpdate(filedlg.GetPathName());
 
 // update m_Parts
 			UpdateList();
 			m_bReload = TRUE;
-*/
+
+			return TRUE;
+		}
+
+		case ID_FILE_IMPORTPIECE:
+		{
+			CString filename;
+			LC_LDRAW_PIECE piece;
+
+			CFileDialog dlg(TRUE, ".dat\0", NULL,OFN_HIDEREADONLY | OFN_OVERWRITEPROMPT,
+				"LDraw Files (*.dat)|*.dat|All Files (*.*)|*.*||",this);
+			dlg.m_ofn.lpstrFile = filename.GetBuffer(_MAX_PATH);
+
+			if (dlg.DoModal() != IDOK)
+				return TRUE;
+			filename.ReleaseBuffer();
+
+			SystemDoWaitCursor(1);
+
+			if (ReadLDrawPiece(filename, &piece))
+			{
+				if (project->FindPieceInfo(piece.name) != NULL)
+					AfxMessageBox("Piece already exists in the library !", MB_OK|MB_ICONINFORMATION);
+
+				if (SaveLDrawPiece(&piece))
+					AfxMessageBox("Piece successfully imported.", MB_OK|MB_ICONINFORMATION);
+				else
+					AfxMessageBox("Error saving library.", MB_OK|MB_ICONINFORMATION);
+			}
+			else
+				AfxMessageBox("Error reading file", MB_OK|MB_ICONINFORMATION);
+
+			SystemDoWaitCursor(-1);
+			FreeLDrawPiece(&piece);
+
 			return TRUE;
 		}
 
@@ -798,106 +594,45 @@ BOOL CLibraryDlg::OnCommand(WPARAM wParam, LPARAM lParam)
 			if (AfxMessageBox("Are you sure you want to delete ?", MB_ICONQUESTION | MB_YESNO) != IDYES)
 				return TRUE;
 
-			CString str = project->GetLibraryPath();
-			DeleteFile(str + "pieces-i.old");
-			DeleteFile(str + "pieces-b.old");
-			rename(str + "pieces.idx", str + "pieces-i.old");
-			rename(str + "pieces.bin", str + "pieces-b.old");
+			int i, sel = 0;
 
-			File oldbin(false), oldidx(false), newbin(false), newidx(false);
-			if ((!oldbin.Open(str + "pieces-b.old", "rb")) ||
-				(!oldidx.Open(str + "pieces-i.old", "rb")) ||
-				(!newbin.Open(str + "pieces.bin", "wb")) ||
-				(!newidx.Open(str + "pieces.idx", "wb")))
+			for (i = 0; i < m_List.GetItemCount(); i++)
+				if (m_List.GetItemState(i, LVIS_SELECTED))
+					sel++;
+
+			// Nothing to be done
+			if (sel == 0)
+				return TRUE;
+
+			char** names = (char**)malloc(sel*sizeof(char**));
+
+			for (sel = 0, i = 0; i < m_List.GetItemCount(); i++)
+				if (m_List.GetItemState(i, LVIS_SELECTED))
+				{
+					names[sel] = m_Parts[m_List.GetItemData(i)].info->m_strName;
+					sel++;
+				}
+			
+			DeletePiece(names, sel);
+			free(names);
+
+			CString str = project->GetLibraryPath();
+			FileDisk newidx;
+			if (!newidx.Open(str + "pieces.idx", "rb"))
 			{
 				AfxMessageBox("Cannot open file.", MB_OK|MB_ICONERROR);
 				return TRUE;
 			}
 
-			char tmp[200];
-			unsigned short count, deleted = 0, j;
-
-			oldidx.Seek(-(LONG)(sizeof(count)), SEEK_END);
-			oldidx.Read(&count, sizeof(count));
-			oldidx.Seek(0, SEEK_SET);
-			oldidx.Read(tmp, 34);
-			newidx.Write(tmp, 34);
-			oldbin.Read(tmp, 32);
-			newbin.Write(tmp, 32);
-
-			CProgressDlg dlg("Deleting");
-			dlg.Create(this);
-			dlg.SetRange (0, count);
-
-			for (j = 0; j < count; j++)
-			{
-				dlg.StepIt();
-				dlg.SetStatus(m_Parts[j].info->m_strDescription);
-
-				if (dlg.CheckCancelButton())
-				if (AfxMessageBox(IDS_CANCEL_PROMPT, MB_YESNO) == IDYES)
-					break;
-
-				BOOL bDelete = FALSE;
-				char name[9];
-				name[8] = 0;
-				oldidx.Read (&name, 8);
-
-				for (int i = 0; i < m_List.GetItemCount(); i++)
-					if (strcmp(name, m_Parts[m_List.GetItemData(i)].info->m_strName) == 0)
-					{
-						if (m_List.GetItemState(i, LVIS_SELECTED))
-							bDelete = TRUE;
-						break;
-					}
-
-				if (bDelete)
-				{
-					oldidx.Seek(64+12+13, SEEK_CUR);
-					deleted++;
-					continue;
-				}
-
-				newidx.Write(name, 8);
-				oldidx.Read(tmp, 64+12+5);
-				newidx.Write(tmp, 64+12+5);
-				unsigned long binoff = newbin.GetLength(), size;
-				newidx.Write(&binoff, sizeof(binoff));
-				oldidx.Read(&binoff, sizeof(binoff));
-				oldidx.Read(&size, sizeof(size));
-				newidx.Write(&size, sizeof(size));
-
-				void* membuf = malloc (size);
-				oldbin.Seek(binoff, SEEK_SET);
-				oldbin.Read(membuf, size);
-				newbin.Write(membuf, size);
-				free(membuf);
-			}
-
-			// list of moved pieces
-			unsigned short moved;
-			long seek;
-
-			oldidx.Seek(-8, SEEK_END);
-			oldidx.Read(&moved, 2);
-			seek = 16*moved+2;
-			oldidx.Seek(-seek, SEEK_SET);
-			void* membuf = malloc(seek);
-			oldidx.Read(membuf, seek);
-			newidx.Write(membuf, seek);
-			free(membuf);
-
-			// info at the end
-			unsigned long binoff = newbin.GetPosition();
-			newidx.Write(&binoff, sizeof(binoff));
-			count -= deleted;
-			newidx.Write(&count, sizeof(count));
+			unsigned short count;
 
 			// Reload the piece library index.
+			newidx.Seek(-2, SEEK_END);
+			newidx.Read(&count, 2);
 			newidx.Seek(34, SEEK_SET);
 
 			m_Parts.SetSize(count);
-			for (int i = 0; i < count; i++)
+			for (i = 0; i < count; i++)
 			{
 				PARTGROUPINFO* inf = &m_Parts[i];
 				inf->info = project->GetPieceInfo(i);
@@ -908,10 +643,7 @@ BOOL CLibraryDlg::OnCommand(WPARAM wParam, LPARAM lParam)
 				newidx.Seek(8, SEEK_CUR);
 			}
 
-			oldidx.Close();
-			oldbin.Close();
 			newidx.Close();
-			newbin.Close();
 
 			UpdateList();
 			m_bReload = TRUE;

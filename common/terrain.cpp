@@ -1,14 +1,14 @@
 // Terrain: a Bezier surface.
 //
 
-#ifdef _WINDOWS
+#ifdef LC_WINDOWS
 #include "stdafx.h"
-#else
-#include <GL/gl.h>
 #endif
+#include <GL/gl.h>
 #include <math.h>
 #include <stdlib.h>
 #include <time.h>
+#include <string.h>
 #include "defines.h"
 #include "terrain.h"
 #include "file.h"

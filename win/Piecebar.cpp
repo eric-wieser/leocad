@@ -683,6 +683,7 @@ int CPiecesBar::OnCreate(LPCREATESTRUCT lpCreateStruct)
 		CRect(0,0,0,0), this, IDW_PIECESLIST);
 
 	m_wndPiecesList.InsertColumn(0, "Description", LVCFMT_LEFT, 129, 0);
+	m_wndPiecesList.SubclassHeader();
 	if (m_bNumbers)
 		m_wndPiecesList.InsertColumn(1, "Number", LVCFMT_LEFT, 60, 1);
 
@@ -693,7 +694,7 @@ int CPiecesBar::OnCreate(LPCREATESTRUCT lpCreateStruct)
 	for (int i = 0; i < LC_MAXCOLORS; i++)
 		m_wndColorsList.AddString("");
 
-	m_wndPiecesCombo.Create (CBS_DROPDOWN|CBS_HASSTRINGS|WS_VISIBLE|WS_CHILD|
+	m_wndPiecesCombo.Create (CBS_DROPDOWN|CBS_SORT|CBS_HASSTRINGS|WS_VISIBLE|WS_CHILD|
 		WS_VSCROLL|WS_TABSTOP, CRect (0,0,0,0), this, IDW_PIECESCOMBO);
 
 	//  Create a font for the combobox

@@ -42,7 +42,7 @@ RSC=rc.exe
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /MT /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /Yu"stdafx.h" /FD /c
-# ADD CPP /nologo /MT /W3 /GX /O2 /I "../common" /I "../win" /I "./jpeglib" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /Yu"stdafx.h" /FD /c
+# ADD CPP /nologo /MT /W4 /GX /O2 /I "../common" /I "../win" /D "NDEBUG" /D "WIN32" /D "LC_WINDOWS" /Yu"stdafx.h" /FD /c
 # ADD BASE MTL /nologo /D "NDEBUG" /mktyplib203 /o NUL /win32
 # ADD MTL /nologo /D "NDEBUG" /mktyplib203 /o NUL /win32
 # ADD BASE RSC /l 0x409 /d "NDEBUG"
@@ -52,7 +52,7 @@ BSC32=bscmake.exe
 # ADD BSC32 /nologo
 LINK32=link.exe
 # ADD BASE LINK32 /nologo /subsystem:windows /machine:I386
-# ADD LINK32 vfw32.lib glu32.lib opengl32.lib jpeglib.lib 3dsftk.lib /nologo /subsystem:windows /map /machine:I386 /libpath:"./jpeglib/release" /libpath:"./3dsftk/release"
+# ADD LINK32 vfw32.lib glu32.lib opengl32.lib jpeglib.lib 3dsftk.lib libpng.lib zlib.lib /nologo /subsystem:windows /map /machine:I386 /libpath:"./jpeglib/release" /libpath:"./3dsftk/release" /libpath:"./libpng/release" /libpath:"./zlib/release"
 
 !ELSEIF  "$(CFG)" == "LeoCAD - Win32 Debug"
 
@@ -68,7 +68,7 @@ LINK32=link.exe
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /MTd /W3 /Gm /GX /Zi /Od /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /Yu"stdafx.h" /FD /c
-# ADD CPP /nologo /G6 /MTd /W3 /Gm /GX /Zi /Od /I "../common" /I "../win" /I "./jpeglib" /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /Yu"stdafx.h" /FD /c
+# ADD CPP /nologo /G6 /MTd /W3 /Gm /GX /Zi /Od /I "../common" /I "../win" /D "_DEBUG" /D "WIN32" /D "LC_WINDOWS" /Yu"stdafx.h" /FD /c
 # ADD BASE MTL /nologo /D "_DEBUG" /mktyplib203 /o NUL /win32
 # ADD MTL /nologo /D "_DEBUG" /mktyplib203 /o NUL /win32
 # ADD BASE RSC /l 0x409 /d "_DEBUG"
@@ -78,7 +78,7 @@ BSC32=bscmake.exe
 # ADD BSC32 /nologo
 LINK32=link.exe
 # ADD BASE LINK32 /nologo /subsystem:windows /debug /machine:I386 /pdbtype:sept
-# ADD LINK32 vfw32.lib glu32.lib opengl32.lib jpeglib.lib 3dsftk.lib /nologo /subsystem:windows /debug /machine:I386 /libpath:"./jpeglib/debug" /libpath:"./3dsftk/debug"
+# ADD LINK32 vfw32.lib glu32.lib opengl32.lib jpeglib.lib 3dsftk.lib libpng.lib zlib.lib /nologo /subsystem:windows /debug /machine:I386 /libpath:"./jpeglib/debug" /libpath:"./3dsftk/debug" /libpath:"./libpng/debug" /libpath:"./zlib/debug"
 # SUBTRACT LINK32 /profile
 
 !ENDIF 
@@ -286,6 +286,10 @@ SOURCE=.\Rmodel.cpp
 # Begin Source File
 
 SOURCE=.\Seldlg.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\SortHead.cpp
 # End Source File
 # Begin Source File
 
@@ -507,6 +511,10 @@ SOURCE=.\RModel.h
 # Begin Source File
 
 SOURCE=.\SelDlg.h
+# End Source File
+# Begin Source File
+
+SOURCE=.\SortHead.h
 # End Source File
 # Begin Source File
 
@@ -995,12 +1003,33 @@ SOURCE=..\Common\group.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\common\im_bmp.cpp
+# SUBTRACT CPP /YX /Yc /Yu
+# End Source File
+# Begin Source File
+
+SOURCE=..\common\im_png.cpp
+# ADD CPP /I "./libpng" /I "./zlib"
+# SUBTRACT CPP /YX /Yc /Yu
+# End Source File
+# Begin Source File
+
 SOURCE=..\Common\image.cpp
+# ADD CPP /I "./jpeglib"
 # SUBTRACT CPP /YX /Yc /Yu
 # End Source File
 # Begin Source File
 
 SOURCE=..\Common\image.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\common\library.cpp
+# SUBTRACT CPP /YX /Yc /Yu
+# End Source File
+# Begin Source File
+
+SOURCE=..\common\library.h
 # End Source File
 # Begin Source File
 

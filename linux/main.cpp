@@ -30,6 +30,9 @@ bool ignore_commands = false;
 
 void OnCommandDirect(GtkWidget *w, gpointer data)
 {
+  if (ignore_commands)
+    return;
+
   project->HandleCommand((LC_COMMANDS)(int)data, 0);
 }
 
@@ -66,7 +69,11 @@ void OnCommand(GtkWidget* widget, gpointer data)
 
   switch (id)
   {
-    case ID_FILE_EXIT: {
+    case ID_FILE_EXIT:
+    {
+      if (!project->SaveModified())
+	break;
+
       gtk_main_quit();
     } break;
 
@@ -187,8 +194,6 @@ static gint draw_view(GtkWidget *widget, GdkEventExpose *event)
     return TRUE;
 
   project->Render(false);
-  // TODO: call SystemSwap from Render()
-  gtk_gl_area_swapbuffers(GTK_GL_AREA(widget));
 
   return TRUE;
 }
@@ -205,6 +210,9 @@ static gint main_quit (GtkWidget *widget, GdkEvent* event, gpointer data)
 {
   if (!project->SaveModified())
     return TRUE;
+
+  delete project;
+  project = NULL;
 
   gtk_main_quit ();
   return FALSE;
@@ -330,7 +338,7 @@ int main(int argc, char* argv[])
 
   gtk_main();
 
-  delete project;
+  //  delete project;
   return 0;
 }
 
