@@ -275,6 +275,7 @@ public:
 	void ZoomExtents(float AspectRatio, const lcVector3& Center, const lcVector3* Points, int NumPoints, lcStep Step, bool AddKey);
 	void ZoomRegion(float AspectRatio, const lcVector3& Position, const lcVector3& TargetPosition, const lcVector3* Corners, lcStep Step, bool AddKey);
 	void Zoom(float Distance, lcStep Step, bool AddKey);
+	void ZoomAlong(const lcVector3& Distance, lcStep Step, bool AddKey);
 	void Pan(const lcVector3& Distance, lcStep Step, bool AddKey);
 	void Orbit(float DistanceX, float DistanceY, const lcVector3& CenterPosition, lcStep Step, bool AddKey);
 	void Roll(float Distance, lcStep Step, bool AddKey);

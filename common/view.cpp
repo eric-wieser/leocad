@@ -2633,5 +2633,21 @@ void View::OnMouseMove()
 
 void View::OnMouseWheel(float Direction)
 {
-	mModel->Zoom(mCamera, (int)((mInputState.Control ? 100 : 10) * Direction));
+	// TODO: this is a bit of a silly way to discard translational components
+	//       given we could just not calculate them
+	lcVector3 StartEnd[2] =
+	{
+		lcVector3((float)mInputState.x, (float)mInputState.y, 0.0f),
+		lcVector3((float)mInputState.x, (float)mInputState.y, 1.0f)
+	};
+
+	UnprojectPoints(StartEnd, 2);
+	lcVector3 dir = StartEnd[0] - StartEnd[1];
+
+	dir.Normalize();
+	dir *= Direction * 10;
+	if(mInputState.Control)
+		dir *= 10;
+
+	mModel->ZoomAlong(mCamera, dir);
 }

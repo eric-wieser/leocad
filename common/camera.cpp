@@ -853,6 +853,34 @@ void lcCamera::Zoom(float Distance, lcStep Step, bool AddKey)
 	UpdatePosition(Step);
 }
 
+void lcCamera::ZoomAlong(const lcVector3& Distance, lcStep Step, bool AddKey)
+{
+	lcVector3 FrontVector(Distance);
+	FrontVector *= -5.0f;
+
+	// Don't zoom ortho in if it would cross the ortho focal plane.
+	if (IsOrtho())
+	{
+		if ((Distance > 0) && (lcDot(mPosition + FrontVector - mTargetPosition, mPosition - mTargetPosition) <= 0))
+			return;
+
+		mPosition += FrontVector;
+	}
+	else
+	{
+		mPosition += FrontVector;
+		mTargetPosition += FrontVector;
+	}
+
+	if (IsSimple())
+		AddKey = false;
+
+	ChangeKey(mPositionKeys, mPosition, Step, AddKey);
+	ChangeKey(mTargetPositionKeys, mTargetPosition, Step, AddKey);
+
+	UpdatePosition(Step);
+}
+
 void lcCamera::Pan(const lcVector3& Distance, lcStep Step, bool AddKey)
 {
 	mPosition += Distance;

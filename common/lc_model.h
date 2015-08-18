@@ -298,6 +298,7 @@ public:
 	void LookAt(lcCamera* Camera);
 	void ZoomExtents(lcCamera* Camera, float Aspect);
 	void Zoom(lcCamera* Camera, float Amount);
+	void ZoomAlong(lcCamera* Camera, const lcVector3& Amount);
 
 	void MoveSelectedObjects(const lcVector3& Distance, bool Relative, bool Update, bool Checkpoint)
 	{

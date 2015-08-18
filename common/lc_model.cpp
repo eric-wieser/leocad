@@ -3536,6 +3536,17 @@ void lcModel::Zoom(lcCamera* Camera, float Amount)
 		SaveCheckpoint(tr("Zoom"));
 }
 
+void lcModel::ZoomAlong(lcCamera* Camera, const lcVector3& Direction)
+{
+	Camera->ZoomAlong(Direction, mCurrentStep, gMainWindow->GetAddKeys());
+	gMainWindow->UpdateFocusObject(GetFocusObject());
+	gMainWindow->UpdateAllViews();
+
+	if (!Camera->IsSimple())
+		SaveCheckpoint(tr("Zoom"));
+}
+
+
 void lcModel::ShowPropertiesDialog()
 {
 	lcPropertiesDialogOptions Options;
