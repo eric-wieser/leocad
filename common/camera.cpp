@@ -897,21 +897,36 @@ void lcCamera::Pan(const lcVector3& Distance, lcStep Step, bool AddKey)
 
 void lcCamera::Orbit(float DistanceX, float DistanceY, const lcVector3& CenterPosition, lcStep Step, bool AddKey)
 {
-	lcVector3 FrontVector(mPosition - mTargetPosition);
+	lcVector3 FrontVector(mTargetPosition - mPosition);
 
-	lcVector3 Z(lcNormalize(lcVector3(FrontVector[0], FrontVector[1], 0)));
+	lcVector3 Z = lcNormalize(lcVector3(FrontVector[0], FrontVector[1], 0));
+
+	// if we're looking straight down, that doesn't work, so use the up vector
 	if (isnan(Z[0]) || isnan(Z[1]))
 		Z = lcNormalize(lcVector3(mUpVector[0], mUpVector[1], 0));
 
+	// when upside down, forward is behind you
 	if (mUpVector[2] < 0)
 	{
 		Z[0] = -Z[0];
 		Z[1] = -Z[1];
 	}
- 
-	lcMatrix44 YRot(lcVector4(Z[0], Z[1], 0.0f, 0.0f), lcVector4(-Z[1], Z[0], 0.0f, 0.0f), lcVector4(0.0f, 0.0f, 1.0f, 0.0f), lcVector4(0.0f, 0.0f, 0.0f, 1.0f));
-	lcMatrix44 transform = lcMul(lcMul(lcMul(lcMatrix44AffineInverse(YRot), lcMatrix44RotationY(DistanceY)), YRot), lcMatrix44RotationZ(-DistanceX));
 
+	// get the vertical-axis-rotation component of the viewmatrix
+	lcMatrix44 YRot(
+		lcVector4(Z[0], Z[1], 0.0f, 0.0f),
+		lcVector4(-Z[1], Z[0], 0.0f, 0.0f),
+		lcVector4(0.0f, 0.0f, 1.0f, 0.0f),
+		lcVector4(0.0f, 0.0f, 0.0f, 1.0f)
+	);
+	lcMatrix44 transform = lcMul(lcMul(lcMul(
+		lcMatrix44AffineInverse(YRot),
+		lcMatrix44RotationY(-DistanceY)),
+        YRot),
+		lcMatrix44RotationZ(-DistanceX)
+	);
+
+	// apply the rotation around the center point
 	mPosition = lcMul31(mPosition - CenterPosition, transform) + CenterPosition;
 	mTargetPosition = lcMul31(mTargetPosition - CenterPosition, transform) + CenterPosition;
 
