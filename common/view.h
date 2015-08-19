@@ -130,6 +130,8 @@ protected:
 	void DrawAxes();
 	void DrawViewport();
 
+	void UpdateOrbitState();
+
 	void UpdateTrackTool();
 	lcTool GetCurrentTool() const;
 	float GetOverlayScale() const;
@@ -148,6 +150,8 @@ protected:
 
 	float mRotateCircleSize;
 	float mRotateHandleSize;
+	lcMatrix33 mRotateHandleTransform;
+
 	static lcVertexBuffer mRotateMoveVertexBuffer;
 	static lcIndexBuffer mRotateMoveIndexBuffer;
 };

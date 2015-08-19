@@ -1132,6 +1132,23 @@ void View::DrawSelectZoomRegionOverlay()
 	mContext->ClearVertexBuffer(); // context remove
 }
 
+void View::UpdateOrbitState()
+{
+	lcVector3 up = lcMul30(lcVector3(0, 0, 1), mCamera->mWorldView);
+	up[2] = 0;
+	lcVector3 proj = lcNormalize(up);
+	if(isnan(proj[0]) || isnan(proj[1])) proj = lcVector3(0, 1, 0);
+
+	mRotateHandleTransform = lcMatrix33(
+		lcVector3(proj[1], -proj[0], 0),
+		lcVector3(proj[0], proj[1], 0),
+		lcVector3(0, 0, 1)
+	);
+
+	if(proj[1] < 0)
+		mRotateHandleTransform.r[1] *= -1;
+}
+
 void View::DrawRotateViewOverlay()
 {
 	int x, y, w, h;
@@ -1162,38 +1179,63 @@ void View::DrawRotateViewOverlay()
 		*CurVert++ = sinf((float)i / 32.0f * (2.0f * LC_PI)) * r + cy;
 	}
 
-	float OverlayCameraSquareSize = mRotateHandleSize = lcMax(8.0f, (w + h) / 200.0f);
+	mRotateHandleSize = lcMax(8.0f, (w + h) / 200.0f);
 
-	*CurVert++ = cx + OverlayCameraSquareSize; *CurVert++ = cy + r + OverlayCameraSquareSize;
-	*CurVert++ = cx - OverlayCameraSquareSize; *CurVert++ = cy + r + OverlayCameraSquareSize;
-	*CurVert++ = cx - OverlayCameraSquareSize; *CurVert++ = cy + r - OverlayCameraSquareSize;
-	*CurVert++ = cx + OverlayCameraSquareSize; *CurVert++ = cy + r - OverlayCameraSquareSize;
-	*CurVert++ = cx + OverlayCameraSquareSize; *CurVert++ = cy - r + OverlayCameraSquareSize;
-	*CurVert++ = cx - OverlayCameraSquareSize; *CurVert++ = cy - r + OverlayCameraSquareSize;
-	*CurVert++ = cx - OverlayCameraSquareSize; *CurVert++ = cy - r - OverlayCameraSquareSize;
-	*CurVert++ = cx + OverlayCameraSquareSize; *CurVert++ = cy - r - OverlayCameraSquareSize;
-	*CurVert++ = cx + r + OverlayCameraSquareSize; *CurVert++ = cy + OverlayCameraSquareSize;
-	*CurVert++ = cx + r - OverlayCameraSquareSize; *CurVert++ = cy + OverlayCameraSquareSize;
-	*CurVert++ = cx + r - OverlayCameraSquareSize; *CurVert++ = cy - OverlayCameraSquareSize;
-	*CurVert++ = cx + r + OverlayCameraSquareSize; *CurVert++ = cy - OverlayCameraSquareSize;
-	*CurVert++ = cx - r + OverlayCameraSquareSize; *CurVert++ = cy + OverlayCameraSquareSize;
-	*CurVert++ = cx - r - OverlayCameraSquareSize; *CurVert++ = cy + OverlayCameraSquareSize;
-	*CurVert++ = cx - r - OverlayCameraSquareSize; *CurVert++ = cy - OverlayCameraSquareSize;
-	*CurVert++ = cx - r + OverlayCameraSquareSize; *CurVert++ = cy - OverlayCameraSquareSize;
+	lcVector3 points[16 + 2] = {
+		lcVector3(+ mRotateHandleSize, + r + mRotateHandleSize, 0),
+		lcVector3(- mRotateHandleSize, + r + mRotateHandleSize, 0),
+		lcVector3(- mRotateHandleSize, + r - mRotateHandleSize, 0),
+		lcVector3(+ mRotateHandleSize, + r - mRotateHandleSize, 0),
+
+		lcVector3(+ mRotateHandleSize, - r + mRotateHandleSize, 0),
+		lcVector3(- mRotateHandleSize, - r + mRotateHandleSize, 0),
+		lcVector3(- mRotateHandleSize, - r - mRotateHandleSize, 0),
+		lcVector3(+ mRotateHandleSize, - r - mRotateHandleSize, 0),
+
+		lcVector3(+ r + mRotateHandleSize, + mRotateHandleSize, 0),
+		lcVector3(+ r - mRotateHandleSize, + mRotateHandleSize, 0),
+		lcVector3(+ r - mRotateHandleSize, - mRotateHandleSize, 0),
+		lcVector3(+ r + mRotateHandleSize, - mRotateHandleSize, 0),
+
+		lcVector3(- r + mRotateHandleSize, + mRotateHandleSize, 0),
+		lcVector3(- r - mRotateHandleSize, + mRotateHandleSize, 0),
+		lcVector3(- r - mRotateHandleSize, - mRotateHandleSize, 0),
+		lcVector3(- r + mRotateHandleSize, - mRotateHandleSize, 0),
+
+		// up marker
+		lcVector3(0, r - mRotateHandleSize*3, 0),
+		lcVector3(0, r + mRotateHandleSize*3, 0)
+	};
+
+	UpdateOrbitState();
+
+	for(int i = 0; i < 18; i++) {
+		lcVector3 v = lcMul(points[i], mRotateHandleTransform);
+		*CurVert++ = cx + v.x;
+		*CurVert++ = cy + v.y;
+	}
 
 	mContext->SetVertexBufferPointer(Verts);
 	mContext->SetVertexFormat(0, 2, 0, 0);
 
-	GLushort Indices[64 + 32] = 
+	GLushort Indices[64 + 32 + 2] = 
 	{
+		//circle
 		0, 1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 6, 7, 7, 8, 8, 9, 9, 10, 10, 11, 11, 12, 12, 13, 13, 14, 14, 15, 15, 16, 16,
 		17, 17, 18, 18, 19, 19, 20, 20, 21, 21, 22, 22, 23, 23, 24, 24, 25, 25, 26, 26, 27, 27, 28, 28, 29, 29, 30, 30, 31, 31, 0,
-		32, 33, 33, 34, 34, 35, 35, 32, 36, 37, 37, 38, 38, 39, 39, 36,
-		40, 41, 41, 42, 42, 43, 43, 40, 44, 45, 45, 46, 46, 47, 47, 44
+
+		// boxes
+		32, 33, 33, 34, 34, 35, 35, 32,
+		36, 37, 37, 38, 38, 39, 39, 36,
+		40, 41, 41, 42, 42, 43, 43, 40,
+		44, 45, 45, 46, 46, 47, 47, 44,
+
+		// up marker
+		48, 49
 	};
 
 	mContext->SetIndexBufferPointer(Indices);
-	mContext->DrawIndexedPrimitives(GL_LINES, 96, GL_UNSIGNED_SHORT, 0);
+	mContext->DrawIndexedPrimitives(GL_LINES, 64 + 32 + 2, GL_UNSIGNED_SHORT, 0);
 
 	glEnable(GL_DEPTH_TEST);
 
@@ -1903,26 +1945,26 @@ void View::UpdateTrackTool()
 			int cx = vx + vw / 2;
 			int cy = vy + vh / 2;
 
-			float d = sqrtf((float)((cx - x) * (cx - x) + (cy - y) * (cy - y)));
 			float r = mRotateCircleSize;
 
-			const float SquareSize = mRotateHandleSize;
+			lcVector3 transformed = lcMul(lcVector3(x - cx, y - cy, 0), lcMatrix33AffineInverse(mRotateHandleTransform));
+			float d = lcLength(transformed);
 
-			if ((d < r + SquareSize) && (d > r - SquareSize))
+			// near the edge of the circle
+			if (fabs(d - r) < mRotateHandleSize)
 			{
-				if ((cx - x < SquareSize) && (cx - x > -SquareSize))
+				if (abs(transformed.x) < mRotateHandleSize)
 					NewTrackTool = LC_TRACKTOOL_ORBIT_Y;
 
-				if ((cy - y < SquareSize) && (cy - y > -SquareSize))
+				if (abs(transformed.y) < mRotateHandleSize)
 					NewTrackTool = LC_TRACKTOOL_ORBIT_X;
 			}
+			// inside the circle
+			else if (d < r)
+				NewTrackTool = LC_TRACKTOOL_ORBIT_XY;
+			// outside the circle
 			else
-			{
-				if (d < r)
-					NewTrackTool = LC_TRACKTOOL_ORBIT_XY;
-				else
-					NewTrackTool = LC_TRACKTOOL_ROLL;
-			}
+				NewTrackTool = LC_TRACKTOOL_ROLL;
 		}
 		break;
 
@@ -2153,6 +2195,7 @@ void View::OnLeftButtonDown()
 	if (mInputState.Alt)
 	{
 		mTrackTool = LC_TRACKTOOL_ORBIT_XY;
+		UpdateOrbitState();
 		OnUpdateCursor();
 	}
 	else if (mTrackTool == LC_TRACKTOOL_MOVE_XYZ)
@@ -2610,15 +2653,30 @@ void View::OnMouseMove()
 		break;
 
 	case LC_TRACKTOOL_ORBIT_X:
-		mModel->UpdateOrbitTool(mCamera, 0.1f * MouseSensitivity * (mInputState.x - mMouseDownX), 0.0f);
+		{
+			// untransform movement vector to account for rotated handles
+			lcVector3 movement = lcVector3(mInputState.x - mMouseDownX, mInputState.y - mMouseDownY, 0);
+			movement = lcMul(movement, lcMatrix33AffineInverse(mRotateHandleTransform));
+			mModel->UpdateOrbitTool(mCamera, 0.1f * MouseSensitivity * movement.x, 0.0f);
+		}
 		break;
 
 	case LC_TRACKTOOL_ORBIT_Y:
-		mModel->UpdateOrbitTool(mCamera, 0.0f, 0.1f * MouseSensitivity * (mInputState.y - mMouseDownY));
+		{
+			// untransform movement vector to account for rotated handles
+			lcVector3 movement = lcVector3(mInputState.x - mMouseDownX, mInputState.y - mMouseDownY, 0);
+			movement = lcMul(movement, lcMatrix33AffineInverse(mRotateHandleTransform));
+			mModel->UpdateOrbitTool(mCamera, 0.0f, 0.1f * MouseSensitivity * movement.y);
+		}
 		break;
 
 	case LC_TRACKTOOL_ORBIT_XY:
-		mModel->UpdateOrbitTool(mCamera, 0.1f * MouseSensitivity * (mInputState.x - mMouseDownX), 0.1f * MouseSensitivity * (mInputState.y - mMouseDownY));
+		{
+			// untransform movement vector to account for rotated handles
+			lcVector3 movement = lcVector3(mInputState.x - mMouseDownX, mInputState.y - mMouseDownY, 0);
+			movement = lcMul(movement, lcMatrix33AffineInverse(mRotateHandleTransform));
+			mModel->UpdateOrbitTool(mCamera, 0.1f * MouseSensitivity * movement.x, 0.1f * MouseSensitivity * movement.y);
+		}
 		break;
 
 	case LC_TRACKTOOL_ROLL:
