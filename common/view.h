@@ -146,6 +146,8 @@ protected:
 	lcVertexBuffer mGridBuffer;
 	int mGridSettings[7];
 
+	float mRotateCircleSize;
+	float mRotateHandleSize;
 	static lcVertexBuffer mRotateMoveVertexBuffer;
 	static lcIndexBuffer mRotateMoveIndexBuffer;
 };

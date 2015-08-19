@@ -1152,7 +1152,7 @@ void View::DrawRotateViewOverlay()
 	float Verts[32 * 16 * 2];
 	float* CurVert = Verts;
 
-	float r = lcMin(w, h) * 0.35f;
+	float r = mRotateCircleSize = lcMin(w, h) * 0.35f;
 	float cx = x + w / 2.0f;
 	float cy = y + h / 2.0f;
 
@@ -1162,7 +1162,7 @@ void View::DrawRotateViewOverlay()
 		*CurVert++ = sinf((float)i / 32.0f * (2.0f * LC_PI)) * r + cy;
 	}
 
-	const float OverlayCameraSquareSize = lcMax(8.0f, (w + h) / 200.0f);
+	float OverlayCameraSquareSize = mRotateHandleSize = lcMax(8.0f, (w + h) / 200.0f);
 
 	*CurVert++ = cx + OverlayCameraSquareSize; *CurVert++ = cy + r + OverlayCameraSquareSize;
 	*CurVert++ = cx - OverlayCameraSquareSize; *CurVert++ = cy + r + OverlayCameraSquareSize;
@@ -1904,9 +1904,9 @@ void View::UpdateTrackTool()
 			int cy = vy + vh / 2;
 
 			float d = sqrtf((float)((cx - x) * (cx - x) + (cy - y) * (cy - y)));
-			float r = lcMin(vw, vh) * 0.35f;
+			float r = mRotateCircleSize;
 
-			const float SquareSize = lcMax(8.0f, (vw + vh) / 200.0f);
+			const float SquareSize = mRotateHandleSize;
 
 			if ((d < r + SquareSize) && (d > r - SquareSize))
 			{
