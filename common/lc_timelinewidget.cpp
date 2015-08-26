@@ -32,6 +32,8 @@ void lcTimelineWidget::CustomMenuRequested(QPoint Pos)
 {
 	QMenu* Menu = new QMenu(this);
 
+    QTreeWidgetItem* TreeItem = itemAt(Pos);
+
 	lcObject* FocusObject = lcGetActiveModel()->GetFocusObject();
 
 	if (FocusObject && FocusObject->IsPiece())
@@ -43,6 +45,19 @@ void lcTimelineWidget::CustomMenuRequested(QPoint Pos)
 			Menu->addAction(gMainWindow->mActions[LC_MODEL_EDIT_FOCUS]);
 			Menu->addSeparator();
 		}
+	}
+
+	// look for step headings
+    if (TreeItem && TreeItem->data(0, Qt::UserRole).isNull())
+	{
+		QAction* Action = new QAction(tr("Move selection here"), this);
+		Action->setStatusTip(tr("Move the selected parts into this step"));
+		Action->setData(qVariantFromValue((void *) TreeItem));
+        Action->setEnabled(selectedItems().count() != 0);
+		connect(Action, SIGNAL(triggered()), this, SLOT(MoveSelectionTo()));
+
+		Menu->addAction(Action);
+        Menu->addSeparator();
 	}
 
 	QAction* InsertStepAction = Menu->addAction(gMainWindow->mActions[LC_VIEW_TIME_INSERT]->text(), this, SLOT(InsertStep()));
@@ -312,10 +327,8 @@ void lcTimelineWidget::ItemSelectionChanged()
 	blockSignals(Blocked);
 }
 
-void lcTimelineWidget::dropEvent(QDropEvent* Event)
+void lcTimelineWidget::UpdateModel()
 {
-	QTreeWidget::dropEvent(Event);
-
 	QList<QPair<lcPiece*, lcStep>> PieceSteps;
 
 	for (int TopLevelItemIdx = 0; TopLevelItemIdx < topLevelItemCount(); TopLevelItemIdx++)
@@ -334,4 +347,40 @@ void lcTimelineWidget::dropEvent(QDropEvent* Event)
 	mIgnoreUpdates = true;
 	lcGetActiveModel()->SetPieceSteps(PieceSteps);
 	mIgnoreUpdates = false;
+}
+
+void lcTimelineWidget::dropEvent(QDropEvent* Event)
+{
+	QTreeWidget::dropEvent(Event);
+
+	UpdateModel();
+}
+
+void lcTimelineWidget::MoveSelectionTo()
+{
+    QAction* action = qobject_cast<QAction*>(sender());
+
+    QTreeWidgetItem* step = (QTreeWidgetItem*) action->data().value<void *>();
+
+	QList<QTreeWidgetItem*> selected = selectedItems();
+
+	for (int i = 0; i < selected.count(); i++)
+	{
+		QTreeWidgetItem* parent = selected[i]->parent();
+        int index = parent->indexOfChild(selected[i]);
+		QTreeWidgetItem* child = parent->takeChild(index);
+
+        step->addChild(child);
+	}
+
+	UpdateModel();
+}
+
+// prevent right click changing the selection
+void lcTimelineWidget::mousePressEvent(QMouseEvent *event)
+{
+	if (event->button()== Qt::RightButton)
+		return;
+	else
+		QTreeWidget::mousePressEvent(event);
 }

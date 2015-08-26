@@ -18,8 +18,13 @@ public slots:
 	void ItemSelectionChanged();
 	void CustomMenuRequested(QPoint Pos);
 
+protected slots:
+	void MoveSelectionTo();
+
 protected:
 	virtual void dropEvent(QDropEvent* Event);
+    virtual void mousePressEvent(QMouseEvent * event);
+	void UpdateModel();
 
 	QMap<int, QIcon> mIcons;
 	QMap<lcPiece*, QTreeWidgetItem*> mItems;
