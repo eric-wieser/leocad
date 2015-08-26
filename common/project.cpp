@@ -1246,50 +1246,56 @@ void Project::CreateHTMLPieceList(QTextStream& Stream, lcModel* Model, lcStep St
 		for (const auto& ColorIt : PartIt.second)
 			ColorsUsed[ColorIt.first]++;
 
-	Stream << QLatin1String("<br><table border=1><tr><td><center>Piece</center></td>\r\n");
+	Stream << QLatin1String(
+		"<table class=\"piece-list\">\r\n"
+		"\t<tr>\r\n"
+		"\t\t<th>Piece</th>\r\n"
+	);
 
 	for (int ColorIdx = 0; ColorIdx < gColorList.GetSize(); ColorIdx++)
 	{
 		if (ColorsUsed[ColorIdx])
 		{
 			ColorsUsed[ColorIdx] = NumColors++;
-			Stream << QString("<td><center>%1</center></td>\n").arg(gColorList[ColorIdx].Name);
+			Stream << QString("\t\t<th>%1</th>\r\n").arg(gColorList[ColorIdx].Name);
 		}
 	}
 	NumColors++;
-	Stream << QLatin1String("</tr>\n");
+	Stream << QLatin1String("\t</tr>\r\n");
 
 	for (const auto& PartIt : PartsList)
 	{
 		const PieceInfo* Info = PartIt.first;
 
+		Stream << QLatin1String("\t<tr>\r\n");
+
 		if (Images)
-			Stream << QString("<tr><td><IMG SRC=\"%1.png\" ALT=\"%2\"></td>\n").arg(Info->m_strName, Info->m_strDescription);
+			Stream << QLatin1String("\t\t<td><img src=\"%1.png\" alt=\"%2\" /></td>\n").arg(Info->m_strName, Info->m_strDescription);
 		else
-			Stream << QString("<tr><td>%1</td>\r\n").arg(Info->m_strDescription);
+			Stream << QLatin1String("\t\t<td>%1</td>\r\n").arg(Info->m_strDescription);
 
 		int CurrentColumn = 1;
 		for (const auto& ColorIt : PartIt.second)
 		{
 			while (CurrentColumn != ColorsUsed[ColorIt.first] + 1)
 			{
-				Stream << QLatin1String("<td><center>-</center></td>\r\n");
+				Stream << QLatin1String("\t\t<td>-</td>\r\n");
 				CurrentColumn++;
 			}
 
-			Stream << QString("<td><center>%1</center></td>\r\n").arg(QString::number(ColorIt.second));
+			Stream << QLatin1String("\t\t<td>%1</td>").arg(QString::number(ColorIt.second));
 			CurrentColumn++;
 		}
 
 		while (CurrentColumn != NumColors)
 		{
-			Stream << QLatin1String("<td><center>-</center></td>\r\n");
+			Stream << QLatin1String("\t\t<td>-</td>\r\n");
 			CurrentColumn++;
 		}
 
-		Stream << QLatin1String("</tr>\r\n");
+		Stream << QLatin1String("\t</tr>\r\n");
 	}
-	Stream << QLatin1String("</table>\r\n<br>");
+	Stream << QLatin1String("</table>\r\n");
 }
 
 void Project::ExportHTML()
@@ -1375,9 +1381,29 @@ void Project::ExportHTML()
 
 			Image.save(FileName);
 
-			Stream << QString::fromLatin1("<IMG SRC=\"%1\" />\r\n").arg(FileName);
+			Stream << QString::fromLatin1("<img src=\"%1\" />\r\n").arg(FileName);
 		}
 	};
+
+	QString HTMLLayoutBegin = QLatin1String(
+		"<html>\r\n"
+		"\t<head>\r\n"
+		"\t\t<title>%1</title>\r\n"
+		"\t\t<style>\r\n"
+		"\t\t* {text-align: center}\r\n"
+		"\t\timg {display: block; margin: auto; }\r\n"
+		"\t\t#footer {font-weight: bold; font-style: italic; border-top: 1px solid gray}\r\n"
+		"\t\t.piece-list { border-collapse: collapse; border-spacing: 0; margin: auto; }\r\n"
+		"\t\t.piece-list td, .piece-list th {border: 1px solid #EEE }\r\n"
+		"\t\t</style>\r\n"
+		"\t</head>\r\n"
+		"\t<body>\r\n"
+	);
+	QString HTMLLayoutEnd = QLatin1String(
+		"\t\t<div id=\"footer\">Created by <a href=\"http://www.leocad.org\">LeoCAD</a></div>\r\n"
+		"\t</body>\r\n"
+		"</html>\r\n"
+	);
 
 	for (int ModelIdx = 0; ModelIdx < Models.GetSize(); ModelIdx++)
 	{
@@ -1408,21 +1434,26 @@ void Project::ExportHTML()
 
 			QTextStream Stream(&File);
 
-			Stream << QString::fromLatin1("<HTML>\r\n<HEAD>\r\n<TITLE>Instructions for %1</TITLE>\r\n</HEAD>\r\n<BR>\r\n<CENTER>\r\n").arg(PageTitle);
+			Stream << HTMLLayoutBegin.arg(QLatin1String("Instructions for %1").arg(Title));
 
 			for (lcStep Step = 1; Step <= LastStep; Step++)
 			{
 				QString StepString = QString::fromLatin1("%1").arg(Step, 2, 10, QLatin1Char('0'));
-				Stream << QString::fromLatin1("<IMG SRC=\"%1-%2.png\" ALT=\"Step %3\" WIDTH=%4 HEIGHT=%5><BR><BR>\r\n").arg(BaseName, StepString, StepString, QString::number(Options.StepImagesWidth), QString::number(Options.StepImagesHeight));
-
+				Stream << QString("\t\t<div id=\"step-%1\">\r\n").arg(StepString);
+				Stream << QString::fromLatin1(
+					"\t\t\t<img src=\"%1-%2.png\" alt=\"Step %3\" width=\"%4\" height=\"%5\" />\r\n"
+				).arg(BaseName, StepString, StepString, QString::number(Options.StepImagesWidth), QString::number(Options.StepImagesHeight));
+				
 				if (Options.PartsListStep)
 					CreateHTMLPieceList(Stream, Model, Step, Options.PartsListImages);
+
+				Stream << QString("\t\t</div>\r\n");
 			}
 
 			if (Options.PartsListEnd)
 				AddPartsListImage(Stream, Model, 0);
 
-			Stream << QLatin1String("</CENTER>\n<BR><HR><BR><B><I>Created by <A HREF=\"http://www.leocad.org\">LeoCAD</A></B></I><BR></HTML>\r\n");
+			Stream << HTMLLayoutEnd;
 		}
 		else
 		{
@@ -1439,15 +1470,15 @@ void Project::ExportHTML()
 
 				QTextStream Stream(&File);
 
-				Stream << QString::fromLatin1("<HTML>\r\n<HEAD>\r\n<TITLE>Instructions for %1</TITLE>\r\n</HEAD>\r\n<BR>\r\n<CENTER>\r\n").arg(PageTitle);
+				Stream << HTMLLayoutBegin.arg(QLatin1String("Instructions for %1").arg(PageTitle));
 
 				for (lcStep Step = 1; Step <= LastStep; Step++)
-					Stream << QString::fromLatin1("<A HREF=\"%1-%2.html\">Step %3<BR>\r\n</A>").arg(BaseName, QString("%1").arg(Step, 2, 10, QLatin1Char('0')), QString::number(Step));
+					Stream << QString::fromLatin1("\t\t<a href=\"%1-%2.html\">Step %3</a><br />\r\n").arg(BaseName, QString("%1").arg(Step, 2, 10, QLatin1Char('0')), QString::number(Step));
 
 				if (Options.PartsListEnd)
-					Stream << QString::fromLatin1("<A HREF=\"%1-pieces.html\">Pieces Used</A><BR>\r\n").arg(BaseName);
+					Stream << QString::fromLatin1("\t\t<a href=\"%1-pieces.html\">Pieces Used</a><br />\r\n").arg(BaseName);
 
-				Stream << QLatin1String("</CENTER>\r\n<BR><HR><BR><B><I>Created by <A HREF=\"http://www.leocad.org\">LeoCAD</A></B></I><BR></HTML>\r\n");
+				Stream << HTMLLayoutEnd;
 			}
 
 			for (lcStep Step = 1; Step <= LastStep; Step++)
@@ -1464,25 +1495,30 @@ void Project::ExportHTML()
 
 				QTextStream Stream(&File);
 
-				Stream << QString::fromLatin1("<HTML>\r\n<HEAD>\r\n<TITLE>%1 - Step %2</TITLE>\r\n</HEAD>\r\n<BR>\r\n<CENTER>\r\n").arg(PageTitle, QString::number(Step));
-				Stream << QString::fromLatin1("<IMG SRC=\"%1-%2.png\" ALT=\"Step %3\" WIDTH=%4 HEIGHT=%5><BR><BR>\r\n").arg(BaseName, StepString, StepString, QString::number(Options.StepImagesWidth), QString::number(Options.StepImagesHeight));
+				Stream << HTMLLayoutBegin.arg(
+					QLatin1String("%1 - Step %2").arg(PageTitle, QString::number(Step))
+				);
+				Stream << QString::fromLatin1(
+					"<img src=\"%1-%2.png\" alt=\"Step %3\" width=\"%4\" height=\"%5\" />"
+					"<br /><br />\r\n"
+				).arg(BaseName, StepString, StepString, QString::number(Options.StepImagesWidth), QString::number(Options.StepImagesHeight));
 
 				if (Options.PartsListStep)
 					CreateHTMLPieceList(Stream, Model, Step, Options.PartsListImages);
 
-				Stream << QLatin1String("</CENTER>\r\n<BR><HR><BR>");
+				Stream << QLatin1String("<br /><hr /><br />\r\n");
 				if (Step != 1)
-					Stream << QString::fromLatin1("<A HREF=\"%1-%2.html\">Previous</A> ").arg(BaseName, QString("%1").arg(Step - 1, 2, 10, QLatin1Char('0')));
+					Stream << QString::fromLatin1("<a href=\"%1-%2.html\">Previous</a> ").arg(BaseName, QString("%1").arg(Step - 1, 2, 10, QLatin1Char('0')));
 
 				if (Options.IndexPage)
-					Stream << QString::fromLatin1("<A HREF=\"%1-index.html\">Index</A> ").arg(BaseName);
+					Stream << QString::fromLatin1("<a href=\"%1-index.html\">Index</a> ").arg(BaseName);
 
 				if (Step != LastStep)
-					Stream << QString::fromLatin1("<A HREF=\"%1-%2.html\">Next</A>").arg(BaseName, QString("%1").arg(Step + 1, 2, 10, QLatin1Char('0')));
+					Stream << QString::fromLatin1("<a href=\"%1-%2.html\">Next</a>").arg(BaseName, QString("%1").arg(Step + 1, 2, 10, QLatin1Char('0')));
 				else if (Options.PartsListEnd)
-					Stream << QString::fromLatin1("<A HREF=\"%1-pieces.html\">Pieces Used</A>").arg(BaseName);
+					Stream << QString::fromLatin1("<a href=\"%1-pieces.html\">Pieces Used</a>").arg(BaseName);
 
-				Stream << QLatin1String("<BR></HTML>\r\n");
+				Stream << HTMLLayoutEnd;
 			}
 
 			if (Options.PartsListEnd)
@@ -1498,17 +1534,19 @@ void Project::ExportHTML()
 
 				QTextStream Stream(&File);
 
-				Stream << QString::fromLatin1("<HTML>\r\n<HEAD>\r\n<TITLE>Pieces used by %1</TITLE>\r\n</HEAD>\r\n<BR>\r\n<CENTER>\n").arg(PageTitle);
+				Stream << HTMLLayoutBegin.arg(
+					QString::fromLatin1("Pieces used by %1").arg(PageTitle)
+				);
 
 				AddPartsListImage(Stream, Model, 0);
 
-				Stream << QLatin1String("</CENTER>\n<BR><HR><BR>");
-				Stream << QString::fromLatin1("<A HREF=\"%1-%2.html\">Previous</A> ").arg(BaseName, QString("%1").arg(LastStep, 2, 10, QLatin1Char('0')));
+				Stream << QLatin1String("<br><hr /><br>");
+				Stream << QString::fromLatin1("<a href=\"%1-%2.html\">Previous</a> ").arg(BaseName, QString("%1").arg(LastStep, 2, 10, QLatin1Char('0')));
 
 				if (Options.IndexPage)
-					Stream << QString::fromLatin1("<A HREF=\"%1-index.html\">Index</A> ").arg(BaseName);
+					Stream << QString::fromLatin1("<a href=\"%1-index.html\">Index</a> ").arg(BaseName);
 
-				Stream << QLatin1String("<BR></HTML>\r\n");
+				Stream << HTMLLayoutEnd;
 			}
 		}
 
@@ -1583,7 +1621,9 @@ void Project::ExportHTML()
 
 		QTextStream Stream(&File);
 
-		Stream << QString::fromLatin1("<HTML>\r\n<HEAD>\r\n<TITLE>Instructions for %1</TITLE>\r\n</HEAD>\r\n<BR>\r\n<CENTER>\r\n").arg(ProjectTitle);
+		Stream << HTMLLayoutBegin.arg(
+			QLatin1String("Instructions for %1").arg(ProjectTitle)
+		);
 
 		for (int ModelIdx = 0; ModelIdx < Models.GetSize(); ModelIdx++)
 		{
@@ -1596,10 +1636,10 @@ void Project::ExportHTML()
 			else
 				FileName = BaseName + QLatin1String("-index.html");
 
-			Stream << QString::fromLatin1("<p><a href=\"%1\">%2</a>").arg(FileName, Model->GetProperties().mName);
+			Stream << QString::fromLatin1("<p><a href=\"%1\">%2</a></p>").arg(FileName, Model->GetProperties().mName);
 		}
 
-		Stream << QLatin1String("</CENTER>\n<BR><HR><BR><B><I>Created by <A HREF=\"http://www.leocad.org\">LeoCAD</A></B></I><BR></HTML>\r\n");
+		Stream << HTMLLayoutEnd;
 	}
 }
 
