@@ -978,7 +978,11 @@ void Project::CreateHTMLPieceList(QTextStream& Stream, lcModel* Model, lcStep St
 	for (int PieceIdx = 0; PieceIdx < PartsList.GetSize(); PieceIdx++)
 		ColorsUsed[PartsList[PieceIdx].ColorIndex]++;
 
-	Stream << QLatin1String("<br><table border=1><tr><td><center>Piece</center></td>\r\n");
+	Stream << QLatin1String(
+		"<table class=\"piece-list\">\r\n"
+		"\t<tr>\r\n"
+		"\t\t<th>Piece</th>\r\n"
+	);
 
 	for (int ColorIdx = 0; ColorIdx < gColorList.GetSize(); ColorIdx++)
 	{
@@ -986,11 +990,11 @@ void Project::CreateHTMLPieceList(QTextStream& Stream, lcModel* Model, lcStep St
 		{
 			ColorsUsed[ColorIdx] = NumColors;
 			NumColors++;
-			Stream << QString("<td><center>%1</center></td>\n").arg(gColorList[ColorIdx].Name);
+			Stream << QString("\t\t<th>%1</th>\r\n").arg(gColorList[ColorIdx].Name);
 		}
 	}
 	NumColors++;
-	Stream << QLatin1String("</tr>\n");
+	Stream << QLatin1String("\t</tr>\r\n");
 
 	for (int j = 0; j < lcGetPiecesLibrary()->mPieces.GetSize(); j++)
 	{
@@ -1009,10 +1013,12 @@ void Project::CreateHTMLPieceList(QTextStream& Stream, lcModel* Model, lcStep St
 
 		if (Add)
 		{
+			Stream << QLatin1String("\t<tr>\r\n");
+
 			if (Images)
-				Stream << QString("<tr><td><IMG SRC=\"%1%2\" ALT=\"%3\"></td>\n").arg(pInfo->m_strName, ImageExtension, pInfo->m_strDescription);
+				Stream << QString("\t\t<td><img src=\"%1%2\" alt=\"%3\"></td>\r\n").arg(pInfo->m_strName, ImageExtension, pInfo->m_strDescription);
 			else
-				Stream << QString("<tr><td>%1</td>\r\n").arg(pInfo->m_strDescription);
+				Stream << QString("\t\t<td>%1</td>\r\n").arg(pInfo->m_strDescription);
 
 			int curcol = 1;
 			for (int ColorIdx = 0; ColorIdx < gColorList.GetSize(); ColorIdx++)
@@ -1021,25 +1027,25 @@ void Project::CreateHTMLPieceList(QTextStream& Stream, lcModel* Model, lcStep St
 				{
 					while (curcol != ColorsUsed[ColorIdx] + 1)
 					{
-						Stream << QLatin1String("<td><center>-</center></td>\r\n");
+						Stream << QLatin1String("\t\t<td>-</td>\r\n");
 						curcol++;
 					}
 
-					Stream << QString("<td><center>%1</center></td>\r\n").arg(QString::number(PiecesUsed[ColorIdx]));
+					Stream << QString("\t\t<td>%1</td>\r\n").arg(QString::number(PiecesUsed[ColorIdx]));
 					curcol++;
 				}
 			}
 
 			while (curcol != NumColors)
 			{
-				Stream << QLatin1String("<td><center>-</center></td>\r\n");
+				Stream << QLatin1String("\t\t<td>-</td>\r\n");
 				curcol++;
 			}
 
-			Stream << QLatin1String("</tr>\r\n");
+			Stream << QLatin1String("\t</tr>\r\n");
 		}
 	}
-	Stream << QLatin1String("</table>\r\n<br>");
+	Stream << QLatin1String("</table>\r\n");
 
 	delete[] PiecesUsed;
 	delete[] ColorsUsed;
@@ -1138,21 +1144,41 @@ void Project::ExportHTML()
 
 		QTextStream Stream(&File);
 
-		Stream << QString("<HTML>\r\n<HEAD>\r\n<TITLE>Instructions for %1</TITLE>\r\n</HEAD>\r\n<BR>\r\n<CENTER>\r\n").arg(Title);
+		Stream << QString(
+			"<html>\r\n"
+			"\t<head>\r\n"
+			"\t\t<title>Instructions for %1</title>\r\n"
+			"\t\t<style>\r\n"
+			"\t\t* {text-align: center}\r\n"
+			"\t\timg {display: block; margin: auto; }\r\n"
+			"\t\t#footer {font-weight: bold; font-style: italic; border-top: 1px solid gray}\r\n"
+			"\t\t.piece-list { border-collapse: collapse; border-spacing: 0; margin: auto; }\r\n"
+			"\t\t.piece-list td, .piece-list th {border: 1px solid #EEE }\r\n"
+			"\t\t</style>\r\n"
+			"\t</head>\r\n"
+			"\t<body>\r\n"
+		).arg(Title);
 
 		for (lcStep Step = 1; Step <= LastStep; Step++)
 		{
 			QString StepString = QString("%1").arg(Step, 2, 10, QLatin1Char('0'));
-			Stream << QString("<IMG SRC=\"%1-%2%3\" ALT=\"Step %4\" WIDTH=%5 HEIGHT=%6><BR><BR>\r\n").arg(BaseName, StepString, ImageExtension, StepString, QString::number(Options.StepImagesWidth), QString::number(Options.StepImagesHeight));
+			Stream << QString("\t\t<div id=\"step-%1\">\r\n").arg(StepString);
+			Stream << QString("\t\t\t<img src=\"%1-%2%3\" alt=\"Step %4\" width=\"%5\" height=\"%6\" />\r\n").arg(BaseName, StepString, ImageExtension, StepString, QString::number(Options.StepImagesWidth), QString::number(Options.StepImagesHeight));
 
 			if (Options.PartsListStep)
 				CreateHTMLPieceList(Stream, Model, Step, Options.PartsListImages, ImageExtension);
+
+			Stream << QString("\t\t</div>\r\n");
 		}
 
 		if (Options.PartsListEnd)
 			CreateHTMLPieceList(Stream, Model, 0, Options.PartsListImages, ImageExtension);
 
-		Stream << QLatin1String("</CENTER>\n<BR><HR><BR><B><I>Created by <A HREF=\"http://www.leocad.org\">LeoCAD</A></B></I><BR></HTML>\r\n");
+		Stream << QString(
+			"\t\t<div id=\"footer\">Created by <a href=\"http://www.leocad.org\">LeoCAD</a></div>\r\n"
+			"\t</body>\r\n"
+			"</html>\r\n"
+		);
 	}
 	else
 	{
