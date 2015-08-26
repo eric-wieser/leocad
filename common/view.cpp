@@ -649,7 +649,7 @@ void View::DrawSelectMoveOverlay()
 	mContext->SetViewMatrix(mCamera->mWorldView);
 	mContext->SetProjectionMatrix(GetProjectionMatrix());
 
-	glDisable(GL_DEPTH_TEST);
+	glClear(GL_DEPTH_BUFFER_BIT);
 
 	lcMatrix44 RelativeRotation = mModel->GetRelativeRotation();
 	lcVector3 OverlayCenter = mModel->GetFocusOrSelectionCenter();
@@ -742,8 +742,6 @@ void View::DrawSelectMoveOverlay()
 
 		glDisable(GL_BLEND);
 	}
-
-	glEnable(GL_DEPTH_TEST);
 
 	mContext->ClearIndexBuffer(); // context remove
 }
