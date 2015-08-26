@@ -20,6 +20,7 @@ public slots:
 
 protected slots:
 	void MoveSelectionTo();
+	void UpdateCurrentStep();
 
 protected:
 	virtual void dropEvent(QDropEvent* Event);

@@ -32,7 +32,7 @@ void lcTimelineWidget::CustomMenuRequested(QPoint Pos)
 {
 	QMenu* Menu = new QMenu(this);
 
-    QTreeWidgetItem* TreeItem = itemAt(Pos);
+	QTreeWidgetItem* TreeItem = itemAt(Pos);
 
 	lcObject* FocusObject = lcGetActiveModel()->GetFocusObject();
 
@@ -48,16 +48,25 @@ void lcTimelineWidget::CustomMenuRequested(QPoint Pos)
 	}
 
 	// look for step headings
-    if (TreeItem && TreeItem->data(0, Qt::UserRole).isNull())
+	if (TreeItem && TreeItem->data(0, Qt::UserRole).isNull())
 	{
-		QAction* Action = new QAction(tr("Move selection here"), this);
-		Action->setStatusTip(tr("Move the selected parts into this step"));
-		Action->setData(qVariantFromValue((void *) TreeItem));
-        Action->setEnabled(selectedItems().count() != 0);
-		connect(Action, SIGNAL(triggered()), this, SLOT(MoveSelectionTo()));
+		{
+			QAction* Action = new QAction(tr("Move selection here"), this);
+			Action->setStatusTip(tr("Move the selected parts into this step"));
+			Action->setData(qVariantFromValue((void *) TreeItem));
+			Action->setEnabled(selectedItems().count() != 0);
+			connect(Action, SIGNAL(triggered()), this, SLOT(MoveSelectionTo()));
+			Menu->addAction(Action);
+		}
+		{
+			QAction* Action = new QAction(tr("Set as current step"), this);
+			Action->setStatusTip(tr("View the model at this point in the timeline"));
+			Action->setData(qVariantFromValue((void *) TreeItem));
+			connect(Action, SIGNAL(triggered()), this, SLOT(UpdateCurrentStep()));
+			Menu->addAction(Action);
+		}
 
-		Menu->addAction(Action);
-        Menu->addSeparator();
+		Menu->addSeparator();
 	}
 
 	QAction* InsertStepAction = Menu->addAction(gMainWindow->mActions[LC_VIEW_TIME_INSERT]->text(), this, SLOT(InsertStep()));
@@ -116,7 +125,7 @@ void lcTimelineWidget::Update(bool Clear, bool UpdateItems)
 	for (unsigned int TopLevelItemIdx = topLevelItemCount(); TopLevelItemIdx < LastStep; TopLevelItemIdx++)
 	{
 		QTreeWidgetItem* StepItem = new QTreeWidgetItem(this, QStringList(tr("Step %1").arg(TopLevelItemIdx + 1)));
-		StepItem->setFlags(Qt::ItemIsEnabled | Qt::ItemIsDropEnabled);
+        StepItem->setFlags(Qt::ItemIsEnabled | Qt::ItemIsDropEnabled);
 		addTopLevelItem(StepItem);
 		StepItem->setExpanded(true);
 	}
@@ -358,22 +367,33 @@ void lcTimelineWidget::dropEvent(QDropEvent* Event)
 
 void lcTimelineWidget::MoveSelectionTo()
 {
-    QAction* action = qobject_cast<QAction*>(sender());
-
-    QTreeWidgetItem* step = (QTreeWidgetItem*) action->data().value<void *>();
+	QAction* action = qobject_cast<QAction*>(sender());
+	QTreeWidgetItem* step = (QTreeWidgetItem*) action->data().value<void *>();
 
 	QList<QTreeWidgetItem*> selected = selectedItems();
 
 	for (int i = 0; i < selected.count(); i++)
 	{
 		QTreeWidgetItem* parent = selected[i]->parent();
-        int index = parent->indexOfChild(selected[i]);
+		int index = parent->indexOfChild(selected[i]);
 		QTreeWidgetItem* child = parent->takeChild(index);
 
-        step->addChild(child);
+		step->addChild(child);
 	}
 
 	UpdateModel();
+}
+
+void lcTimelineWidget::UpdateCurrentStep()
+{
+	QAction* action = qobject_cast<QAction*>(sender());
+    QTreeWidgetItem* stepItem = (QTreeWidgetItem*) action->data().value<void *>();
+
+    int stepIdx = indexOfTopLevelItem(stepItem);
+
+    if (stepIdx == -1) return;
+
+    lcGetActiveModel()->SetCurrentStep(stepIdx + 1);
 }
 
 // prevent right click changing the selection
